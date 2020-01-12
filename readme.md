@@ -1,4 +1,5 @@
-This is an experimental XMPP server
-App is under constructions
+This is an experimental XMPP server.
 
-Right now i working on xml parsing 
+App is under constructions.
+
+Right now i working on xml parsing.
