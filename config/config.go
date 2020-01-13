@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"gopkg.in/ini.v1"
 	"os"
 )
@@ -51,5 +50,4 @@ func Init() {
 	Config.Password.Salt1 = cfg.Section("password").Key("salt1").String()
 	Config.Password.Salt2 = cfg.Section("password").Key("salt2").String()
 
-	fmt.Println(Config)
 }

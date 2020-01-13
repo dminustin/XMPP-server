@@ -36,11 +36,11 @@ func Init() {
 		ServerName: appconfig.Config.Server.Domain,
 	}
 
-	actions.ActinIQ()
 	// Listen for incoming connections.
 	// fmt.Sprintf(":%d", *portPtr)
-	listener, err := net.Listen("tcp", appconfig.Config.Server.Ip+":"+fmt.Sprintf("%s", appconfig.Config.Server.Port))
+	listener, err := net.Listen("tcp", appconfig.Config.Server.Ip+":"+fmt.Sprintf("%v", appconfig.Config.Server.Port))
 	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 	defer listener.Close()
