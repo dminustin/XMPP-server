@@ -19,6 +19,7 @@ type ConfigStruct struct {
 		Database string
 		Login    string
 		Password string
+		Port     string
 	}
 
 	Password struct {
@@ -46,6 +47,7 @@ func Init() {
 	Config.Mysql.Database = cfg.Section("mysql").Key("database").String()
 	Config.Mysql.Login = cfg.Section("mysql").Key("login").String()
 	Config.Mysql.Password = cfg.Section("mysql").Key("password").String()
+	Config.Mysql.Port = cfg.Section("mysql").Key("port").String()
 
 	Config.Password.Salt1 = cfg.Section("password").Key("salt1").String()
 	Config.Password.Salt2 = cfg.Section("password").Key("salt2").String()

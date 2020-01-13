@@ -49,8 +49,10 @@ func ActionAuth(s string, conn *tls.Conn, user *modules.User) bool {
 	}
 	login := resp[0]
 	password := resp[1]
-	fmt.Println(login, password)
-	if TryTuAuth(login, password) {
+
+	result, message := user.TryToAuth(login, password)
+
+	if result {
 		user.Authorized = true
 		user.ID = login
 		user.UID = login + "@" + appconfig.Config.Server.Domain
@@ -58,7 +60,7 @@ func ActionAuth(s string, conn *tls.Conn, user *modules.User) bool {
 		return true
 	} else {
 		DoRespond(conn, "<failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">"+
-			"<not-authorized /><text xml:lang=\"en\">Password not verified</text></failure>")
+			"<not-authorized /><text xml:lang=\"en\">"+message+"</text></failure>")
 		return false
 	}
 }

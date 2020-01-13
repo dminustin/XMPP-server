@@ -131,7 +131,8 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 	case "iq":
 		{
 			if user.Authorized {
-				log.Printf("[Respond]: %s", msgType)
+				log.Printf("Starting IQ")
+				actions.ActionIQ(s, conn, user)
 
 			}
 			break
