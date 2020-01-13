@@ -3,28 +3,26 @@ package application
 import (
 	"crypto/tls"
 	//"encoding/xml"
+	"amfxmpp/actions"
+	appconfig "amfxmpp/config"
+	"amfxmpp/modules"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"amfxmpp/actions"
-	"amfxmpp/modules"
 )
 
 var (
 	config tls.Config
 )
 
-
 type MyStruct struct {
-	Name    string
-	xmlns    string
-	Meta    map[string]interface{}
+	Name  string
+	xmlns string
+	Meta  map[string]interface{}
 }
 
-
 func Init() {
-	//portPtr := flag.Int("port", 5222, "port number to listen on")
 	var cert, _ = tls.LoadX509KeyPair("./.keys/fullchain3.pem", "./.keys/privkey3.pem")
 	config = tls.Config{
 		MinVersion:   tls.VersionTLS10,
@@ -35,18 +33,17 @@ func Init() {
 			tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
 			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
 			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA},
-			ServerName: "tematicon.club",
+		ServerName: appconfig.Config.Server.Domain,
 	}
 
 	actions.ActinIQ()
 	// Listen for incoming connections.
 	// fmt.Sprintf(":%d", *portPtr)
-	listener, err := net.Listen("tcp", "tematicon.club:5222")// , &tlsConfig)
+	listener, err := net.Listen("tcp", appconfig.Config.Server.Ip+":"+fmt.Sprintf("%s", appconfig.Config.Server.Port))
 	if err != nil {
 		os.Exit(1)
 	}
 	defer listener.Close()
-
 
 	// Handle each connection.
 	for {
@@ -59,7 +56,6 @@ func Init() {
 		go TCPAnswer(conn)
 	}
 }
-
 
 func TCPAnswer(conn net.Conn) {
 	defer conn.Close()
@@ -76,22 +72,25 @@ func TCPAnswer(conn net.Conn) {
 		var s = string(buf[:n])
 		log.Printf("server: conn: echo %q\n", s)
 
-		mtype:=ParseMSGType(s)
+		mtype := ParseMSGType(s)
 		log.Printf("XCommand [%s]", mtype)
 		switch mtype {
-		case "stream": {
-			log.Println("Starting stream")
-			WriteMessage(actions.MessageHelloReply(), conn)
-			break
-		}
-		case "starttls": {
-			log.Printf("Starting TLS")
-			handleTLSConnection(conn)
-			break
-		}
-		default : {
-			log.Printf("Unknown request %s", s)
-		}
+		case "stream":
+			{
+				log.Println("Starting stream")
+				WriteMessage(actions.MessageHelloReply(), conn)
+				break
+			}
+		case "starttls":
+			{
+				log.Printf("Starting TLS")
+				handleTLSConnection(conn)
+				break
+			}
+		default:
+			{
+				log.Printf("Unknown request %s", s)
+			}
 		}
 
 		if err != nil {
@@ -106,45 +105,47 @@ func TCPAnswer(conn net.Conn) {
 
 func WriteMessage(msg []byte, conn net.Conn) {
 	n, err := conn.Write(msg)
-	if err!=nil {
+	if err != nil {
 		log.Println("[ERROR] " + fmt.Sprintf("%s", err))
 	}
 	log.Printf("server: conn: wrote %d bytes", n)
 
-
 }
-
 
 func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (result, fatal bool) {
 	switch msgType {
-	case "auth": {
-		res := actions.ActionAuth(s,conn, user)
-		log.Printf("[%s]: %s", msgType, res)
-		return res, !res
-		break
-	}
-	case "stream": {
-		if (user.Authorized) {
-			actions.DoRespond(conn, actions.MessageAfterLogged())
+	case "auth":
+		{
+			res := actions.ActionAuth(s, conn, user)
+			log.Printf("[%s]: %s", msgType, res)
+			return res, !res
+			break
 		}
-		break
-	}
-	case "iq": {
-		if (user.Authorized) {
-			log.Printf("[Respond]: %s", msgType)
+	case "stream":
+		{
+			if user.Authorized {
+				actions.DoRespond(conn, actions.MessageAfterLogged())
+			}
+			break
+		}
+	case "iq":
+		{
+			if user.Authorized {
+				log.Printf("[Respond]: %s", msgType)
 
+			}
+			break
 		}
-		break
-	}
-	default : {
-		log.Printf("[%s] unknown cmd %s", msgType, s)
-	}
+	default:
+		{
+			log.Printf("[%s] unknown cmd %s", msgType, s)
+		}
 	}
 	return true, false
 }
 
 func handleTLSConnection(unenc_conn net.Conn) {
-	user := &modules.User {
+	user := &modules.User{
 		Authorized: false,
 	}
 	WriteMessage(actions.MessageProceedTLS(), unenc_conn)
@@ -167,9 +168,8 @@ func handleTLSConnection(unenc_conn net.Conn) {
 		}
 		var s = string(buffer[:bytesRead])
 		log.Printf("server: conn: echo %q\n", s)
-		mtype:=ParseMSGType(s)
+		mtype := ParseMSGType(s)
 		log.Printf("Command [%s]", mtype)
 		doAction(mtype, s, conn, user)
 	}
 }
-
