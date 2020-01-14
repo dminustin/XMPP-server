@@ -23,5 +23,6 @@ Please check todo.txt if you would like to know about my plans.
 
 ## Right now complete:
 - configuration file
+- encrypted connection
 - user authorization
 - some interactions with App: get info, get discovery, authorization 
