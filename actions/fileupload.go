@@ -35,7 +35,7 @@ func (a *ActionTemplate) FileUpload_DoDisco() bool {
 			a.user.FullAddr,
 			"5242880", //5 Mb
 
-		))
+		), a.data.Id)
 
 	return true
 }
@@ -57,6 +57,6 @@ func (a *ActionTemplate) ActionRequestFileUpload() bool {
 			uplHash,
 			config.Config.Server.Domain,
 			uplHash,
-		))
+		), a.data.Id)
 	return true
 }

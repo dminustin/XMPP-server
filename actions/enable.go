@@ -8,6 +8,6 @@ func (a *ActionTemplate) ActionEnable() bool {
 	DoRespond(a.conn,
 		fmt.Sprintf("<enabled xmlns='%s'/>",
 			a.data.Enable.Xmlns,
-		))
+		), a.data.Id)
 	return true
 }

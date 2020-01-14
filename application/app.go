@@ -123,8 +123,9 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 		}
 	case "stream":
 		{
+			log.Println(s)
 			if user.Authorized {
-				actions.DoRespond(conn, actions.MessageAfterLogged())
+				actions.DoRespond(conn, actions.MessageAfterLogged(), "")
 			}
 			break
 		}

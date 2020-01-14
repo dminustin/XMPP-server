@@ -19,3 +19,11 @@ func (*ActionTemplate) GetAbuseInfo() string {
 		"<value>xmpp:1@%s</value>"+
 		"</field>", config.Config.Server.Domain)
 }
+
+func (a *ActionTemplate) GetResultHeader() string {
+	return fmt.Sprintf("<iq type=\"result\" xmlns=\"jabber:client\" id=\"%s\" to=\"%s\">",
+		a.data.Id,
+		a.user.FullAddr,
+	)
+
+}

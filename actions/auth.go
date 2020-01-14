@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
-	"log"
 	"strings"
 	//"log"
 )
@@ -34,17 +33,17 @@ func ActionAuth(s string, conn *tls.Conn, user *modules.User) bool {
 	t, err := base64.StdEncoding.DecodeString(data.Password)
 	if err != nil {
 		DoRespond(conn, "<failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">"+
-			"<not-authorized /><text xml:lang=\"en\">Password not verified</text></failure>")
+			"<not-authorized /><text xml:lang=\"en\">Password not verified</text></failure>", "")
 		return false
 	}
 	trimed := strings.Trim(string(t), "\x00")
 	trimed = strings.Trim(trimed, " ")
 
 	resp := strings.Split(trimed, "\x00")
-	log.Println(resp, len(resp))
+
 	if len(resp) != 2 {
 		DoRespond(conn, "<failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">"+
-			"<not-authorized /><text xml:lang=\"en\">Password not verified</text></failure>")
+			"<not-authorized /><text xml:lang=\"en\">Password not verified</text></failure>", "")
 		return false
 	}
 	login := resp[0]
@@ -56,11 +55,11 @@ func ActionAuth(s string, conn *tls.Conn, user *modules.User) bool {
 		user.Authorized = true
 		user.ID = login
 		user.UID = login + "@" + appconfig.Config.Server.Domain
-		DoRespond(conn, "<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" />")
+		DoRespond(conn, "<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" />", "")
 		return true
 	} else {
 		DoRespond(conn, "<failure xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">"+
-			"<not-authorized /><text xml:lang=\"en\">"+message+"</text></failure>")
+			"<not-authorized /><text xml:lang=\"en\">"+message+"</text></failure>", "")
 		return false
 	}
 }

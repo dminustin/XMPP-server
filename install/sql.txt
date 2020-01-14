@@ -1,0 +1,45 @@
+CREATE TABLE IF NOT EXISTS  `%s_messages` (
+ `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+ `message` longtext NOT NULL,
+ `from_user` bigint(20) NOT NULL,
+ `to_user` bigint(20) NOT NULL,
+ `date_create` datetime NOT NULL,
+ `date_read` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+ `deleted_sender` tinyint(1) unsigned NOT NULL DEFAULT '0',
+ `deleted_recipient` tinyint(1) unsigned NOT NULL DEFAULT '0',
+ PRIMARY KEY (`id`),
+ KEY `from_user` (`from_user`),
+ KEY `to_user` (`to_user`),
+ KEY `date_create` (`date_create`),
+ KEY `date_read` (`date_read`),
+ KEY `deleted_sender` (`deleted_sender`),
+ KEY `deleted_recipient` (`deleted_recipient`)
+) ENGINE=InnoDB AUTO_INCREMENT=319405 DEFAULT CHARSET=utf8
+-----------
+CREATE TABLE IF NOT EXISTS `%s_messages_attachements` (
+ `message_id` bigint(20) unsigned NOT NULL,
+ `filename` varchar(200) NOT NULL,
+ `from_id` bigint(20) NOT NULL,
+ `to_id` bigint(20) NOT NULL,
+ KEY `from_id` (`from_id`),
+ KEY `to_id` (`to_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+-----------
+CREATE TABLE IF NOT EXISTS `%s_staff` (
+ `user_id` bigint(20) unsigned NOT NULL,
+ `role` varchar(32) NOT NULL,
+ PRIMARY KEY (`user_id`,`role`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+-----------
+CREATE TABLE IF NOT EXISTS `%s_users` (
+ `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+ `user_password` char(32) NOT NULL,
+ `avatar_url` varchar(1024) DEFAULT NULL,
+ `aboutme` longtext NOT NULL,
+ `user_state` varchar(50) NOT NULL DEFAULT 'activation',
+ `nickname` varchar(120) NOT NULL,
+ `last_online` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+ `last_ip` varchar(32) NOT NULL DEFAULT '',
+ PRIMARY KEY (`id`),
+ KEY `last_online` (`last_online`),
+) ENGINE=InnoDB AUTO_INCREMENT=8666 DEFAULT CHARSET=utf8

@@ -17,6 +17,6 @@ func (a *ActionTemplate) ActionBind() bool {
 			"<jid>%s</jid>"+
 			"</bind>"+
 			"</iq>",
-			a.data.Id, a.user.FullAddr))
+			a.data.Id, a.user.FullAddr), a.data.Id)
 	return true
 }

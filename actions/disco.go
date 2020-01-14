@@ -13,6 +13,12 @@ func (a *ActionTemplate) ActionDiscoInfo() bool {
 	if a.data.To == "message-router."+config.Config.Server.Domain {
 		return a.Messages_DoDisco()
 	}
+	if a.data.To == "pubsub."+config.Config.Server.Domain {
+		return a.Pubsub_DoDisco()
+	}
+	if a.data.To == "push."+config.Config.Server.Domain {
+		return a.Push_DoDisco()
+	}
 
 	DoRespond(a.conn,
 		fmt.Sprintf("<iq id='%s' type='result' to='%s' from='%s'>"+
@@ -101,7 +107,7 @@ func (a *ActionTemplate) ActionDiscoInfo() bool {
 			a.user.UID,
 			a.user.Resource,
 			config.Config.Server.Domain,
-		))
+		), a.data.Id)
 	return true
 }
 
@@ -125,6 +131,6 @@ func (a *ActionTemplate) ActionDiscoItems() bool {
 			config.Config.Server.Domain,
 			config.Config.Server.Domain,
 			config.Config.Server.Domain,
-		))
+		), a.data.Id)
 	return true
 }

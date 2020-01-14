@@ -3,6 +3,7 @@ package actions
 import (
 	"amfxmpp/config"
 	"fmt"
+	"os"
 )
 
 func (a *ActionTemplate) Messages_DoDisco() bool {
@@ -26,7 +27,15 @@ func (a *ActionTemplate) Messages_DoDisco() bool {
 			config.Config.Server.Domain,
 			a.data.Id,
 			a.user.FullAddr,
-		))
+		), a.data.Id)
+
+	return true
+}
+
+func (a *ActionTemplate) ActionGetMessagesArchive() bool {
+
+	a.GetResultHeader()
+	os.Exit(1)
 
 	return true
 }
