@@ -11,7 +11,7 @@ func (a *ActionTemplate) ActionBind() bool {
 	} else {
 		a.user.FullAddr = a.user.UID
 	}
-	DoRespond(a.conn,
+	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq id='%s' type='result'>"+
 			"<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>"+
 			"<jid>%s</jid>"+

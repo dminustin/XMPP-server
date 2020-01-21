@@ -7,7 +7,7 @@ import (
 
 func (a *ActionTemplate) Push_DoDisco() bool {
 
-	DoRespond(a.conn,
+	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq type=\"result\" xmlns=\"jabber:client\" from=\"push.%s\" id=\"%s\" to=\"%s\">"+
 			"<query xmlns=\"http://jabber.org/protocol/disco#info\">"+
 			"<identity type=\"push\" category=\"pubsub\" name=\"Push Notifications component\" />"+

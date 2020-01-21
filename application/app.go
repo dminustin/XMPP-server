@@ -2,6 +2,8 @@ package application
 
 import (
 	"crypto/tls"
+	"time"
+
 	//"encoding/xml"
 	"amfxmpp/actions"
 	appconfig "amfxmpp/config"
@@ -50,6 +52,7 @@ func Init() {
 		conn, err := listener.Accept()
 
 		if err != nil {
+			fmt.Println(err)
 			os.Exit(1)
 		}
 
@@ -125,7 +128,7 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 		{
 			log.Println(s)
 			if user.Authorized {
-				actions.DoRespond(conn, actions.MessageAfterLogged(), "")
+				user.DoRespond(conn, actions.MessageAfterLogged(), "")
 			}
 			break
 		}
@@ -138,9 +141,28 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 			}
 			break
 		}
+	case "presence":
+		{
+			if user.Authorized {
+				log.Printf("Starting Presence")
+				actions.ActionPresence(s, conn, user)
+
+			}
+			break
+		}
+	case "message":
+		{
+			log.Printf("Starting Messaging")
+			if user.Authorized {
+				actions.ActionMessage(s, conn, user)
+
+			}
+			break
+		}
 	default:
 		{
 			log.Printf("[%s] unknown cmd %s", msgType, s)
+			user.DoRespond(conn, "", "")
 		}
 	}
 	return true, false
@@ -148,7 +170,11 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 
 func handleTLSConnection(unenc_conn net.Conn) {
 	user := &modules.User{
-		Authorized: false,
+		Authorized:           false,
+		LastServerRequest:    0,
+		PayLoad:              "",
+		Resource:             "",
+		ReadyForInteractions: false,
 	}
 	WriteMessage(actions.MessageProceedTLS(), unenc_conn)
 
@@ -162,6 +188,7 @@ func handleTLSConnection(unenc_conn net.Conn) {
 	n, _ := conn.Write(actions.MessageHelloReply())
 	log.Printf("server: conn: wrote %d bytes", n)
 	var buffer = make([]byte, 1024)
+
 	for {
 		bytesRead, err := conn.Read(buffer)
 		if err != nil {
@@ -173,5 +200,11 @@ func handleTLSConnection(unenc_conn net.Conn) {
 		mtype := ParseMSGType(s)
 		log.Printf("Command [%s]", mtype)
 		doAction(mtype, s, conn, user)
+		if (user.Authorized) && (user.ReadyForInteractions) {
+			log.Println("....................................")
+			if user.LastServerRequest+10 < time.Now().Unix() {
+				modules.DoServerInteractions(user, conn)
+			}
+		}
 	}
 }

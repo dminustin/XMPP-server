@@ -8,7 +8,7 @@ import (
 
 func (a *ActionTemplate) FileUpload_DoDisco() bool {
 	//todo implement Upload Max File Size into config
-	DoRespond(a.conn,
+	a.user.DoRespond(a.conn,
 		fmt.Sprintf(
 			"<iq type=\"result\" xmlns=\"jabber:client\" from=\"upload.%s\" id=\"%s\" to=\"%s\">"+
 				"<query xmlns=\"http://jabber.org/protocol/disco#info\">"+
@@ -44,7 +44,7 @@ func (a *ActionTemplate) ActionRequestFileUpload() bool {
 	log.Printf("[Do uploading] %s", a.data)
 	uplHash := a.user.GetUploadToken()
 	//todo put "PUT URL" && "GET URL" into config
-	DoRespond(a.conn,
+	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq to=\"%s\" xmlns=\"jabber:client\" id=\"upload.%s\" from=\"%s\" type=\"result\">"+
 			"<slot xmlns=\"urn:xmpp:http:upload:0\">"+
 			"<put url=\"https://%s/xmpp/upload/%s/%s\" />"+

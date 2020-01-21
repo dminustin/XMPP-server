@@ -1,3 +1,20 @@
+CREATE TABLE `xmpp_roster` (
+`owner_id` BIGINT NOT NULL ,
+`user_id` BIGINT NOT NULL ,
+`relation` ENUM('friend','banned') NULL DEFAULT NULL ,
+`contact_state` ENUM('active','away','dnd','offline', 'invisible') NULL DEFAULT NULL ,
+`contact_state_date` DATETIME NULL DEFAULT NULL ,
+`contact_status_message` VARCHAR(4096) NULL DEFAULT NULL ,
+PRIMARY KEY (`owner_id`, `user_id`),
+INDEX (`contact_state_date`),
+INDEX (`contact_state`),
+INDEX (`relation`)) ENGINE = InnoDB;
+-----------
+CREATE TABLE `%s_sessions` (
+`user_id` BIGINT UNSIGNED NOT NULL , `user_resource` VARCHAR(128) NOT NULL ,
+`last_login` DATETIME NOT NULL , PRIMARY KEY (`user_id`, `user_resource`),
+INDEX (`last_login`)) ENGINE = InnoDB;
+-----------
 CREATE TABLE IF NOT EXISTS  `%s_messages` (
  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
  `message` longtext NOT NULL,

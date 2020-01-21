@@ -20,7 +20,7 @@ func (a *ActionTemplate) ActionDiscoInfo() bool {
 		return a.Push_DoDisco()
 	}
 
-	DoRespond(a.conn,
+	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq id='%s' type='result' to='%s' from='%s'>"+
 			"<query xmlns=\"http://jabber.org/protocol/disco#info\">"+
 			"<identity category=\"account\" type=\"registered\" />"+
@@ -113,7 +113,7 @@ func (a *ActionTemplate) ActionDiscoInfo() bool {
 
 func (a *ActionTemplate) ActionDiscoItems() bool {
 
-	DoRespond(a.conn,
+	a.user.DoRespond(a.conn,
 		fmt.Sprintf(
 
 			"<iq type=\"result\" xmlns=\"jabber:client\" from=\"%s\" id=\"%s\" to=\"%s\">"+

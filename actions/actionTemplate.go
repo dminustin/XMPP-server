@@ -5,12 +5,18 @@ import (
 	"amfxmpp/modules"
 	"crypto/tls"
 	"fmt"
+	"time"
 )
 
 type ActionTemplate struct {
 	data *IQ
 	conn *tls.Conn
 	user *modules.User
+}
+
+func (*ActionTemplate) GetDateVersion() string {
+	dt := time.Now().Unix()
+	return fmt.Sprintf("%d", dt)
 }
 
 func (*ActionTemplate) GetAbuseInfo() string {

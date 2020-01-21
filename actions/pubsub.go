@@ -8,7 +8,7 @@ import (
 
 func (a *ActionTemplate) Pubsub_DoDisco() bool {
 
-	DoRespond(a.conn,
+	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq type=\"result\" xmlns=\"jabber:client\" from=\"pubsub.%s\" id=\"%s\" to=\"%s\">"+
 			"<query xmlns=\"http://jabber.org/protocol/disco#info\">"+
 			"<identity type=\"service\" category=\"pubsub\" name=\"PubSub acs-clustered\" />"+
@@ -75,7 +75,7 @@ func (a *ActionTemplate) ActionGetBookmarks() bool {
 	//todo implement roster notes XEP-0145
 	log.Println("DO Storage Bookmarks")
 
-	DoRespond(a.conn,
+	a.user.DoRespond(a.conn,
 		a.GetResultHeader()+"<pubsub xmlns='http://jabber.org/protocol/pubsub'>"+
 			"<items node='storage:bookmarks'/>"+
 			"</pubsub>"+

@@ -12,36 +12,46 @@ import (
 type IQ struct { // Info/Query
 	XMLName   xml.Name     `xml:"iq"`
 	To        string       `xml:"to,attr,omitempty"`
-	Id        string       `xml:"id,attr"`
-	Type      string       `xml:"type,attr"`
-	Bind      NestedStruct `xml:"bind"`
-	Session   NestedStruct `xml:"session"`
-	Query     NestedStruct `xml:"query"`
-	Enable    NestedStruct `xml:"enable"`
-	Request   NestedStruct `xml:"request"`
-	Blocklist NestedStruct `xml:"blocklist"`
-	Pubsub    NestedStruct `xml:"pubsub"`
-	Ping      NestedStruct `xml:"ping"`
-	Message   NestedStruct `xml:"message"`
+	Id        string       `xml:"id,attr,omitempty"`
+	Type      string       `xml:"type,attr,omitempty"`
+	Bind      NestedStruct `xml:"bind,omitempty"`
+	Session   NestedStruct `xml:"session,omitempty"`
+	Query     NestedStruct `xml:"query,omitempty"`
+	Enable    NestedStruct `xml:"enable,omitempty"`
+	Request   NestedStruct `xml:"request,omitempty"`
+	Blocklist NestedStruct `xml:"blocklist,omitempty"`
+	Pubsub    NestedStruct `xml:"pubsub,omitempty"`
+	Ping      NestedStruct `xml:"ping,omitempty"`
+	Message   NestedStruct `xml:"message,omitempty"`
 }
+
 type NestedStruct struct {
 	Xmlns   string `xml:"xmlns,attr,omitempty"`
 	Payload Node   `xml:"resource,omitempty"`
 	Storage Node   `xml:"storage,omitempty"`
 	Queryid string `xml:"queryid,omitempty"`
-	Roster  Node   `xml:"roster"`
+	Roster  Node   `xml:"roster,omitempty"`
 	Items   Node   `xml:"items,omitempty"`
 	Item    Node   `xml:"item,omitempty"`
 	Body    Node   `xml:"body,omitempty"`
 	Thread  Node   `xml:"thread,omitempty"`
+	Publish Node   `xml:"publish,omitempty"`
 }
 
 type Node struct {
 	XMLName xml.Name
-	Attrs   []xml.Attr `xml:"-"`
+	Attrs   []xml.Attr `xml:"-,omitempty"`
 	Content string     `xml:",cdata"`
-	Nodes   []Node     `xml:",any"`
+	Nodes   []Node     `xml:",any,omitempty"`
 	Node    string     `xml:"node,attr,omitempty"`
+	Item    struct {
+		Id       string `xml:"id,omitempty"`
+		Activity struct {
+			Xmlns   string     `xml:"xmlns,attr,omitempty"`
+			Attrs   []xml.Attr `xml:"-,omitempty"`
+			Content string     `xml:",cdata"`
+		} `xml:"activity,omitempty"`
+	} `xml:"item,omitempty"`
 }
 
 func (s Node) IsEmpty() bool {
