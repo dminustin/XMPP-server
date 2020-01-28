@@ -26,6 +26,14 @@ type ConfigStruct struct {
 		Salt1 string
 		Salt2 string
 	}
+
+	FileServer struct {
+		UploadPort      string
+		DownloadPort    string
+		PutPath         string
+		DownloadPath    string
+		FileStoragePath string
+	}
 }
 
 var Config ConfigStruct
@@ -51,5 +59,11 @@ func Init() {
 
 	Config.Password.Salt1 = cfg.Section("password").Key("salt1").String()
 	Config.Password.Salt2 = cfg.Section("password").Key("salt2").String()
+
+	Config.FileServer.UploadPort = cfg.Section("fileserver").Key("upload_port").String()
+	Config.FileServer.DownloadPort = cfg.Section("fileserver").Key("download_port").String()
+	Config.FileServer.PutPath = cfg.Section("fileserver").Key("put_path").String()
+	Config.FileServer.DownloadPath = cfg.Section("fileserver").Key("download_path").String()
+	Config.FileServer.FileStoragePath = cfg.Section("fileserver").Key("filestorage_path").String()
 
 }

@@ -2,7 +2,7 @@ package application
 
 import (
 	"crypto/tls"
-	"time"
+	"regexp"
 
 	//"encoding/xml"
 	"amfxmpp/actions"
@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"runtime"
 )
 
 var (
@@ -38,9 +39,31 @@ func Init() {
 		ServerName: appconfig.Config.Server.Domain,
 	}
 
+	//Listen for uploading
+	go func() {
+		if true {
+			return
+		}
+		log.Println("Start fileserver")
+		listener, err := net.Listen("tcp", ":5224")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		for {
+			conn, err := listener.Accept()
+
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+
+			go UploadServer(conn)
+		}
+	}()
 	// Listen for incoming connections.
-	// fmt.Sprintf(":%d", *portPtr)
-	listener, err := net.Listen("tcp", appconfig.Config.Server.Ip+":"+fmt.Sprintf("%v", appconfig.Config.Server.Port))
+
+	listener, err := net.Listen("tcp", ":"+fmt.Sprintf("%v", appconfig.Config.Server.Port))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -174,7 +197,9 @@ func handleTLSConnection(unenc_conn net.Conn) {
 		LastServerRequest:    0,
 		PayLoad:              "",
 		Resource:             "",
+		FullAddr:             "",
 		ReadyForInteractions: false,
+		LastMessageID:        "0",
 	}
 	WriteMessage(actions.MessageProceedTLS(), unenc_conn)
 
@@ -187,7 +212,9 @@ func handleTLSConnection(unenc_conn net.Conn) {
 	log.Printf("%s", "End handshake")
 	n, _ := conn.Write(actions.MessageHelloReply())
 	log.Printf("server: conn: wrote %d bytes", n)
-	var buffer = make([]byte, 1024)
+	var buffer = make([]byte, 16384)
+
+	connEstablished := false
 
 	for {
 		bytesRead, err := conn.Read(buffer)
@@ -195,16 +222,56 @@ func handleTLSConnection(unenc_conn net.Conn) {
 			conn.Close()
 			return
 		}
-		var s = string(buffer[:bytesRead])
-		log.Printf("server: conn: echo %q\n", s)
-		mtype := ParseMSGType(s)
-		log.Printf("Command [%s]", mtype)
-		doAction(mtype, s, conn, user)
-		if (user.Authorized) && (user.ReadyForInteractions) {
-			log.Println("....................................")
-			if user.LastServerRequest+10 < time.Now().Unix() {
-				modules.DoServerInteractions(user, conn)
+		var in_string = string(buffer[:bytesRead])
+		log.Printf("server: conn: echo %q\n", in_string)
+
+		tags := []string{
+			"message",
+			"iq",
+			"presence",
+		}
+
+		parsed := false
+		for _, tag := range tags {
+			x := fmt.Sprintf(`(<%s[ |>].*?</%s>)`, tag, tag)
+			re := regexp.MustCompile(x)
+			results := re.FindAllString(in_string, 9999999)
+			for _, s := range results {
+				parsed = true
+				mtype := ParseMSGType(s)
+				log.Printf("Command [%s]", mtype)
+				doAction(mtype, s, conn, user)
 			}
 		}
+		if !parsed {
+			mtype := ParseMSGType(in_string)
+			doAction(mtype, in_string, conn, user)
+		}
+
+		//log.Println("AUTH:", user.Authorized, "READY:", user.ReadyForInteractions, user)
+		if (user.Authorized) && (user.ReadyForInteractions) {
+			if !connEstablished {
+				log.Println("Start Interactions routine")
+				connEstablished = true
+				go modules.DoServerInteractions(user, conn)
+			}
+
+			PrintMemUsage()
+
+		}
 	}
+}
+
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
+	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }

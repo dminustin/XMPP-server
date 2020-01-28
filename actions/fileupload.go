@@ -2,8 +2,10 @@ package actions
 
 import (
 	"amfxmpp/config"
+	"amfxmpp/modules"
 	"fmt"
 	"log"
+	"os"
 )
 
 func (a *ActionTemplate) FileUpload_DoDisco() bool {
@@ -33,7 +35,7 @@ func (a *ActionTemplate) FileUpload_DoDisco() bool {
 			config.Config.Server.Domain,
 			a.data.Id,
 			a.user.FullAddr,
-			"5242880", //5 Mb
+			"52428800", //5 Mb
 
 		), a.data.Id)
 
@@ -43,20 +45,29 @@ func (a *ActionTemplate) FileUpload_DoDisco() bool {
 func (a *ActionTemplate) ActionRequestFileUpload() bool {
 	log.Printf("[Do uploading] %s", a.data)
 	uplHash := a.user.GetUploadToken()
+
+	_, err := modules.DB.Exec(`insert into xmpp_uploads
+	set hash=?, from_id=?`, uplHash, a.user.ID)
+
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+		a.user.DoRespond(a.conn,
+			fmt.Sprintf(`<result type="error" to="%s" id="%s" />`, a.user.FullAddr, a.data.Id),
+			a.data.Id)
+		return true
+	}
+
 	//todo put "PUT URL" && "GET URL" into config
 	a.user.DoRespond(a.conn,
-		fmt.Sprintf("<iq to=\"%s\" xmlns=\"jabber:client\" id=\"upload.%s\" from=\"%s\" type=\"result\">"+
+		fmt.Sprintf("<iq to=\"%s\" xmlns=\"jabber:client\" id=\"%s\" from=\"upload.%s\" type=\"result\">"+
 			"<slot xmlns=\"urn:xmpp:http:upload:0\">"+
-			"<put url=\"https://%s/xmpp/upload/%s/%s\" />"+
-			"<get url=\"https://%s/xmpp/files/%s\" />"+
+			"<put url=\"%s\" />"+
+			"<get url=\"https://download/"+uplHash+"\" />"+
 			"</slot>"+
-			"</iq>",
+			"</iq><a xmlns=\"urn:xmpp:sm:3\" h=\"25\" />",
 			a.user.FullAddr, a.data.Id, config.Config.Server.Domain,
-			config.Config.Server.Domain,
-			a.user.ID,
-			uplHash,
-			config.Config.Server.Domain,
-			uplHash,
+			"https://"+config.Config.Server.Domain+":"+config.Config.FileServer.UploadPort+config.Config.FileServer.PutPath+a.user.ID+"/"+uplHash,
 		), a.data.Id)
 	return true
 }

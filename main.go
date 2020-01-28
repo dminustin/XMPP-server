@@ -2,11 +2,15 @@ package main
 
 import (
 	app "amfxmpp/application"
-	config "amfxmpp/config"
-	modules "amfxmpp/modules"
+	"amfxmpp/config"
+	"amfxmpp/modules"
+	"log"
+	"time"
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.Println("App started")
 	config.Init()
 	modules.InitDB(
 		config.Config.Mysql.Login,
@@ -17,6 +21,10 @@ func main() {
 	)
 	var m modules.User
 	m.GetUploadToken()
-	app.Init()
+	go app.InitUploadServer()
+	go app.Init()
+	for {
+		time.Sleep(time.Second * 60)
+	}
 
 }

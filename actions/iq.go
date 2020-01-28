@@ -6,12 +6,15 @@ import (
 	"encoding/xml"
 	"fmt"
 	"log"
+	"os"
 	"reflect"
 )
 
-type IQ struct { // Info/Query
+type IQ struct {
+	// Info/Query
 	XMLName   xml.Name     `xml:"iq"`
 	To        string       `xml:"to,attr,omitempty"`
+	From      string       `xml:"from,attr,omitempty"`
 	Id        string       `xml:"id,attr,omitempty"`
 	Type      string       `xml:"type,attr,omitempty"`
 	Bind      NestedStruct `xml:"bind,omitempty"`
@@ -62,11 +65,18 @@ func (s NestedStruct) IsEmpty() bool {
 }
 
 func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
+
+	log.Println(s)
 	var inData = []byte(s)
 	data := &IQ{}
 	err := xml.Unmarshal(inData, data)
 	if nil != err {
-		fmt.Println("Error unmarshalling from XML", err)
+		fmt.Println("Error unmarshalling from XML", err, s)
+		os.Exit(1)
+	}
+
+	if len(data.From) > 0 {
+		user.ChangeResource(data.From)
 	}
 
 	modules.WriteQueChan(data.Id, s)

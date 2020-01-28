@@ -3,6 +3,7 @@ package actions
 import (
 	"amfxmpp/config"
 	"fmt"
+	"log"
 )
 
 func (a *ActionTemplate) ActionDiscoInfo() bool {
@@ -104,7 +105,7 @@ func (a *ActionTemplate) ActionDiscoInfo() bool {
 			"</iq>",
 
 			a.data.Id,
-			a.user.UID,
+			a.user.FullAddr,
 			a.user.Resource,
 			config.Config.Server.Domain,
 		), a.data.Id)
@@ -112,7 +113,7 @@ func (a *ActionTemplate) ActionDiscoInfo() bool {
 }
 
 func (a *ActionTemplate) ActionDiscoItems() bool {
-
+	log.Println("Return Disco Items")
 	a.user.DoRespond(a.conn,
 		fmt.Sprintf(
 

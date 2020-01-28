@@ -3,11 +3,12 @@ package actions
 import (
 	"amfxmpp/config"
 	"amfxmpp/modules"
+	"amfxmpp/utils"
 	"crypto/tls"
 	"encoding/xml"
 	"fmt"
 	"log"
-	"strconv"
+	"os"
 	"strings"
 )
 
@@ -27,7 +28,7 @@ type Message struct {
 
 func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 
-	log.Printf("[MESSAGE] %s", s)
+	//log.Printf("[MESSAGE] %s", s)
 
 	var inData = []byte(s)
 	data := &Message{}
@@ -38,6 +39,11 @@ func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 		//todo implement received
 		return true
 	}
+
+	if len(data.From) > 0 {
+		user.ChangeResource(data.From)
+	}
+
 	if data.Body.IsEmpty() {
 		//todo Do something
 		return true
@@ -46,7 +52,7 @@ func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 	tmp := strings.Split(data.To, "@")
 	to := tmp[0]
 	srv := tmp[1]
-	fmt.Println(srv, to)
+	//fmt.Println(srv, to)
 	if srv != config.Config.Server.Domain {
 		return false
 	}
@@ -54,7 +60,16 @@ func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 	//todo check if user is banned
 	//todo check if user is blacklisted
 	content := data.Body.Content
-	content = strconv.Quote(content)
+
+	tmp = strings.Split(content, "/download/")
+	log.Println(tmp)
+	isUploaded := (tmp[0] == "https:/") && (len(tmp) == 2)
+
+	content = utils.QuoteText(content)
+
+	if isUploaded {
+		content = "Uploaded file"
+	}
 	res, err := modules.DB.Exec("INSERT INTO messages SET date_create=NOW(), from_user=? , to_user=? , message = ?", user.ID, to, content)
 	message_id := int64(0)
 	aff, err := res.RowsAffected()
@@ -62,10 +77,25 @@ func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 		ins, err := res.LastInsertId()
 		if err == nil {
 			message_id = ins
+		} else {
+			return false
 		}
 	}
 
-	log.Println(s, data, err, message_id)
+	if isUploaded {
+		_, err = modules.DB.Exec(`insert into messages_attachements (message_id, filename, from_id, to_id) select 
+		? as message_id, xmpp_uploads.filename, ? as from_id, ? as to_id
+		from xmpp_uploads
+		where hash=? and from_id=?
+		`, message_id, user.ID, to, tmp[1], user.ID)
+
+		if err != nil {
+			log.Println(err)
+			os.Exit(1)
+		}
+	}
+
+	//log.Println(s, data, err, message_id)
 	//os.Exit(1)
 	return true
 }

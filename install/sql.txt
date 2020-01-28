@@ -1,3 +1,10 @@
+CREATE TABLE `xmpp_uploads` (
+`hash` VARCHAR(64) NOT NULL ,
+`from_id` BIGINT NOT NULL ,
+`filename` VARCHAR(512) NULL ,
+`regdate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+PRIMARY KEY (`hash`), INDEX (`from_id`)) ENGINE = InnoDB;
+-----------
 CREATE TABLE `xmpp_roster` (
 `owner_id` BIGINT NOT NULL ,
 `user_id` BIGINT NOT NULL ,
