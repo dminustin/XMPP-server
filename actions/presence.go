@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"amfxmpp/config"
 	"crypto/tls"
 	"encoding/xml"
 	"log"
@@ -21,8 +22,8 @@ type XMLPresence struct {
 }
 
 func ActionPresence(s string, conn *tls.Conn, user *modules.User) bool {
-	log.Println("PRESENSE!")
 
+	log.Println("DO PRESENCE")
 	var inData = []byte(s)
 	data := &XMLPresence{}
 	xml.Unmarshal(inData, data)
@@ -47,7 +48,9 @@ func ActionPresence(s string, conn *tls.Conn, user *modules.User) bool {
 		message = data.Status.Content
 	}
 
-	_, err := modules.DB.Exec(`UPDATE xmpp_roster set contact_state=?, contact_state_date=NOW(), contact_status_message=? where user_id=?`,
+	_, err := modules.DB.Exec(`UPDATE `+config.Config.Tables.TableFriendship+` set 
+		contact_state=?, contact_state_date=NOW(), 
+		contact_status_message=? where friend_id=?`,
 		status,
 		message,
 		user.ID,

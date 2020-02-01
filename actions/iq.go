@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/xml"
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 )
@@ -36,6 +35,7 @@ type NestedStruct struct {
 	Roster  Node   `xml:"roster,omitempty"`
 	Items   Node   `xml:"items,omitempty"`
 	Item    Node   `xml:"item,omitempty"`
+	Group   Node   `xml:"group,omitempty"`
 	Body    Node   `xml:"body,omitempty"`
 	Thread  Node   `xml:"thread,omitempty"`
 	Publish Node   `xml:"publish,omitempty"`
@@ -47,6 +47,7 @@ type Node struct {
 	Content string     `xml:",cdata"`
 	Nodes   []Node     `xml:",any,omitempty"`
 	Node    string     `xml:"node,attr,omitempty"`
+	Jid     string     `xml:"jid,attr,omitempty"`
 	Item    struct {
 		Id       string `xml:"id,omitempty"`
 		Activity struct {
@@ -66,7 +67,6 @@ func (s NestedStruct) IsEmpty() bool {
 
 func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
 
-	log.Println(s)
 	var inData = []byte(s)
 	data := &IQ{}
 	err := xml.Unmarshal(inData, data)
@@ -102,8 +102,10 @@ func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
 			cmd = "disco.info"
 		} else if data.Query.Xmlns == "http://jabber.org/protocol/disco#items" {
 			cmd = "disco.items"
-		} else if data.Query.Xmlns == "jabber:iq:roster" {
+		} else if data.Query.Xmlns == "jabber:iq:roster" && data.Type == "get" {
 			cmd = "roster.get"
+		} else if data.Query.Xmlns == "jabber:iq:roster" && data.Type == "set" {
+			cmd = "roster.set"
 		} else if data.Query.Xmlns == "urn:xmpp:mam:1" {
 			cmd = "messages.archive"
 		} else if !data.Query.Storage.IsEmpty() {
@@ -115,7 +117,7 @@ func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
 		}
 	}
 
-	log.Printf("\n\n%s == %s\n%s\n\n", cmd, data.Query.Xmlns, s)
+	//log.Printf("\n\n%s == %s\n%s\n\n", cmd, data.Query.Xmlns, s)
 
 	var oActionTemplate = ActionTemplate{user: user, conn: conn, data: data}
 	switch cmd {
@@ -162,6 +164,11 @@ func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
 	case "roster.get":
 		{
 			return oActionTemplate.ActionRosterGetList()
+			break
+		}
+	case "roster.set":
+		{
+			return oActionTemplate.ActionRosterSet()
 			break
 		}
 	case "enable":

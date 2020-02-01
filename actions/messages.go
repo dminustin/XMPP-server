@@ -34,7 +34,7 @@ func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 	data := &Message{}
 	xml.Unmarshal(inData, data)
 
-	fmt.Println(data.Received, s)
+	//fmt.Println(data.Received, s)
 	if !data.Received.IsEmpty() {
 		//todo implement received
 		return true
@@ -61,10 +61,11 @@ func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 	//todo check if user is blacklisted
 	content := data.Body.Content
 
-	tmp = strings.Split(content, "/download/")
-	log.Println(tmp)
-	isUploaded := (tmp[0] == "https:/") && (len(tmp) == 2)
+	find := "https://" + config.Config.Server.Domain + ":" + config.Config.FileServer.DownloadPort + config.Config.FileServer.DownloadPath
 
+	isUploaded := strings.Contains(content, find)
+
+	splittedUplUrl := strings.Split(content, "/")
 	content = utils.QuoteText(content)
 
 	if isUploaded {
@@ -82,12 +83,14 @@ func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 		}
 	}
 
+	user.LastSentMessageID = message_id
+
 	if isUploaded {
 		_, err = modules.DB.Exec(`insert into messages_attachements (message_id, filename, from_id, to_id) select 
 		? as message_id, xmpp_uploads.filename, ? as from_id, ? as to_id
 		from xmpp_uploads
 		where hash=? and from_id=?
-		`, message_id, user.ID, to, tmp[1], user.ID)
+		`, message_id, user.ID, to, splittedUplUrl[len(splittedUplUrl)-1], user.ID)
 
 		if err != nil {
 			log.Println(err)

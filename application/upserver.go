@@ -4,6 +4,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
+	"fmt"
+	"io"
+	"os"
+	"regexp"
+	"strconv"
+
 	//"fmt"
 	"strings"
 
@@ -61,7 +67,8 @@ func InitUploadServer() {
 	}
 
 	server.Handler = http.DefaultServeMux
-	http.HandleFunc(conf.Config.FileServer.PutPath, HelloServer)
+	http.HandleFunc(conf.Config.FileServer.PutPath, UploadServerHandler)
+	http.HandleFunc(conf.Config.FileServer.DownloadPath, DownloadServerHandler)
 
 	err = server.ListenAndServeTLS(conf.Config.Server.Public_key, conf.Config.Server.Private_key)
 	if err != nil {
@@ -70,7 +77,63 @@ func InitUploadServer() {
 
 }
 
-func HelloServer(w http.ResponseWriter, req *http.Request) {
+func DownloadServerHandler(w http.ResponseWriter, req *http.Request) {
+	log.Println("RECV")
+
+	log.Println("HEADER", req.Header)
+
+	log.Println("METHOD", req.Method)
+
+	log.Println("METHOD", req.URL)
+
+	defer req.Body.Close()
+	_, _ = ioutil.ReadAll(req.Body)
+
+	spl := strings.Split(req.URL.Path, "/")
+	key := spl[len(spl)-1]
+	uid := spl[len(spl)-2]
+	var re = regexp.MustCompile(`([^a-z0-9\\._])`)
+	key = re.ReplaceAllString(key, ``)
+	uid = re.ReplaceAllString(uid, ``)
+
+	dir := conf.Config.FileServer.FileStoragePath + uid + "/" + key
+
+	Openfile, err := os.Open(dir)
+	defer Openfile.Close() //Close after function return
+	if err != nil {
+		//File not found, send 404
+		http.Error(w, "File not found.", 404)
+		return
+	}
+
+	//File is found, create and send the correct headers
+
+	//Get the Content-Type of the file
+	//Create a buffer to store the header of the file in
+	FileHeader := make([]byte, 512)
+	//Copy the headers into the FileHeader buffer
+	Openfile.Read(FileHeader)
+	//Get content type of file
+	FileContentType := http.DetectContentType(FileHeader)
+	fmt.Println(FileContentType)
+
+	//Get the file size
+	FileStat, _ := Openfile.Stat()                     //Get info from file
+	FileSize := strconv.FormatInt(FileStat.Size(), 10) //Get file size as a string
+
+	//Send the headers
+	//w.Header().Set("Content-Disposition", "attachment; filename="+key)
+	w.Header().Set("Content-Type", FileContentType)
+	w.Header().Set("Content-Length", FileSize)
+
+	//Send the file
+	//We read 512 bytes from the file already, so we reset the offset back to 0
+	Openfile.Seek(0, 0)
+	io.Copy(w, Openfile)
+
+}
+
+func UploadServerHandler(w http.ResponseWriter, req *http.Request) {
 	log.Println("SENT")
 
 	log.Println("HEADER", req.Header)
@@ -83,13 +146,18 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 
 	file, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		log.Println(err.Error())
+		http.Error(w, "Unauthorized access", 403)
 		return
 	}
 	//log.Println(string(b))
 	spl := strings.Split(req.URL.Path, "/")
 	key := spl[len(spl)-1]
 	uid := spl[len(spl)-2]
+
+	var re = regexp.MustCompile(`([^a-z0-9\\._])`)
+	key = re.ReplaceAllString(key, ``)
+	uid = re.ReplaceAllString(uid, ``)
 
 	var dbUpl dbUploads
 	err = modules.DB.Get(&dbUpl, `select * from xmpp_uploads where hash=? and from_id=? limit 1`, key, uid)
@@ -109,6 +177,8 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
+	} else {
+
 	}
 
 	modules.DB.Exec(`update xmpp_uploads set filename=? where hash=? and from_id=? limit 1`, filename, key, uid)

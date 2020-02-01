@@ -3,7 +3,6 @@ package actions
 import (
 	"amfxmpp/config"
 	"fmt"
-	"log"
 )
 
 func (a *ActionTemplate) Pubsub_DoDisco() bool {
@@ -73,7 +72,7 @@ func (a *ActionTemplate) ActionPubsub() bool {
 
 func (a *ActionTemplate) ActionGetBookmarks() bool {
 	//todo implement roster notes XEP-0145
-	log.Println("DO Storage Bookmarks")
+	//log.Println("DO Storage Bookmarks")
 
 	a.user.DoRespond(a.conn,
 		a.GetResultHeader()+"<pubsub xmlns='http://jabber.org/protocol/pubsub'>"+

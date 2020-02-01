@@ -63,7 +63,7 @@ func (a *ActionTemplate) ActionRequestFileUpload() bool {
 		fmt.Sprintf("<iq to=\"%s\" xmlns=\"jabber:client\" id=\"%s\" from=\"upload.%s\" type=\"result\">"+
 			"<slot xmlns=\"urn:xmpp:http:upload:0\">"+
 			"<put url=\"%s\" />"+
-			"<get url=\"https://download/"+uplHash+"\" />"+
+			"<get url=\"https://"+config.Config.Server.Domain+":"+config.Config.FileServer.DownloadPort+config.Config.FileServer.DownloadPath+uplHash+"\" />"+
 			"</slot>"+
 			"</iq><a xmlns=\"urn:xmpp:sm:3\" h=\"25\" />",
 			a.user.FullAddr, a.data.Id, config.Config.Server.Domain,

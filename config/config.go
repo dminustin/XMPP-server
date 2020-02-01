@@ -2,6 +2,7 @@ package config
 
 import (
 	"gopkg.in/ini.v1"
+	"log"
 	"os"
 )
 
@@ -34,6 +35,15 @@ type ConfigStruct struct {
 		DownloadPath    string
 		FileStoragePath string
 	}
+
+	Tables struct {
+		TableUsers                string
+		TableMessages             string
+		TableMessagesAttachements string
+		TableSessions             string
+		TableUploads              string
+		TableFriendship           string
+	}
 }
 
 var Config ConfigStruct
@@ -41,7 +51,7 @@ var Config ConfigStruct
 func Init() {
 	cfg, err := ini.Load("./app.ini")
 	if err != nil {
-		println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 	Config.Server.Domain = cfg.Section("server").Key("domain").String()
@@ -65,5 +75,12 @@ func Init() {
 	Config.FileServer.PutPath = cfg.Section("fileserver").Key("put_path").String()
 	Config.FileServer.DownloadPath = cfg.Section("fileserver").Key("download_path").String()
 	Config.FileServer.FileStoragePath = cfg.Section("fileserver").Key("filestorage_path").String()
+
+	Config.Tables.TableUsers = cfg.Section("tables").Key("table_users").String()
+	Config.Tables.TableMessages = cfg.Section("tables").Key("table_messages").String()
+	Config.Tables.TableMessagesAttachements = cfg.Section("tables").Key("table_messages_attachements").String()
+	Config.Tables.TableSessions = cfg.Section("tables").Key("table_sessions").String()
+	Config.Tables.TableUploads = cfg.Section("tables").Key("table_uploads").String()
+	Config.Tables.TableFriendship = cfg.Section("tables").Key("table_friendship").String()
 
 }

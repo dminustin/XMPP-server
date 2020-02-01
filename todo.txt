@@ -1,10 +1,9 @@
-- interactions with discovery (module disco)
-- file uploader
-- messaging
-- users statuses
 - carbon copies
 - offline synchronization
-- roster
 - subscribe authorization
 - vcard
 - installer
+
+MUST IMPLEMENT
+- check uploaded file type (only images can)
+- black list

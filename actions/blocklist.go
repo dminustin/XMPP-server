@@ -1,8 +1,13 @@
 package actions
 
+import "log"
+
 func (a *ActionTemplate) ActionBlockList() bool {
-	if a.data.Blocklist.Xmlns == "urn:xmpp:blocking" {
+	if a.data.Blocklist.Xmlns == "urn:xmpp:blocking" && a.data.Type == "get" {
 		return a.ActionGetBlockList()
+	}
+	if a.data.Blocklist.Xmlns == "urn:xmpp:blocking" && a.data.Type == "set" {
+		return a.ActionSetBlockList()
 	}
 	a.user.DoRespond(a.conn,
 		a.GetResultHeader()+
@@ -24,6 +29,16 @@ func (a *ActionTemplate) ActionGetBlockList() bool {
 			"<item jid='iago@shakespeare.lit'/>"+
 			"</blocklist>"+
 			"</iq>", a.data.Id)
+	return true
+
+}
+
+func (a *ActionTemplate) ActionSetBlockList() bool {
+
+	blockJID := a.data.Blocklist.Item.Content
+	log.Println("Set block to " + blockJID)
+	a.user.DoRespond(a.conn,
+		"<iq type='result' id='"+a.data.Id+"' />", a.data.Id)
 	return true
 
 }

@@ -1,28 +1,31 @@
-CREATE TABLE `xmpp_uploads` (
+CREATE TABLE `%prefix%friendship` (
+  `user_id` bigint NOT NULL,
+  `friend_id` bigint NOT NULL,
+  `state` enum('memory','friend','ban') NOT NULL,
+  `regdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `contact_state` ENUM('active','away','dnd','offline', 'invisible') NULL DEFAULT NULL ,
+  `contact_state_date` DATETIME NULL DEFAULT NULL ,
+  `contact_status_message` VARCHAR(4096) NULL DEFAULT NULL ,
+  INDEX (`contact_state_date`),
+  INDEX (`contact_state`),
+  PRIMARY KEY (`user_id`,`friend_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-----------
+CREATE TABLE `%prefix%uploads` (
 `hash` VARCHAR(64) NOT NULL ,
 `from_id` BIGINT NOT NULL ,
 `filename` VARCHAR(512) NULL ,
 `regdate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 PRIMARY KEY (`hash`), INDEX (`from_id`)) ENGINE = InnoDB;
 -----------
-CREATE TABLE `xmpp_roster` (
-`owner_id` BIGINT NOT NULL ,
-`user_id` BIGINT NOT NULL ,
-`relation` ENUM('friend','banned') NULL DEFAULT NULL ,
-`contact_state` ENUM('active','away','dnd','offline', 'invisible') NULL DEFAULT NULL ,
-`contact_state_date` DATETIME NULL DEFAULT NULL ,
-`contact_status_message` VARCHAR(4096) NULL DEFAULT NULL ,
-PRIMARY KEY (`owner_id`, `user_id`),
-INDEX (`contact_state_date`),
-INDEX (`contact_state`),
-INDEX (`relation`)) ENGINE = InnoDB;
------------
-CREATE TABLE `%s_sessions` (
-`user_id` BIGINT UNSIGNED NOT NULL , `user_resource` VARCHAR(128) NOT NULL ,
+CREATE TABLE `%prefix%sessions` (
+`user_id` BIGINT UNSIGNED NOT NULL ,
+`user_resource` VARCHAR(128) NOT NULL ,
 `last_login` DATETIME NOT NULL , PRIMARY KEY (`user_id`, `user_resource`),
+`last_msg_read_id` BIGINT UNSIGNED NOT NULL DEFAULT 0,
 INDEX (`last_login`)) ENGINE = InnoDB;
 -----------
-CREATE TABLE IF NOT EXISTS  `%s_messages` (
+CREATE TABLE IF NOT EXISTS  `%prefix%messages` (
  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
  `message` longtext NOT NULL,
  `from_user` bigint(20) NOT NULL,
@@ -40,7 +43,7 @@ CREATE TABLE IF NOT EXISTS  `%s_messages` (
  KEY `deleted_recipient` (`deleted_recipient`)
 ) ENGINE=InnoDB AUTO_INCREMENT=319405 DEFAULT CHARSET=utf8
 -----------
-CREATE TABLE IF NOT EXISTS `%s_messages_attachements` (
+CREATE TABLE IF NOT EXISTS `%prefix%messages_attachements` (
  `message_id` bigint(20) unsigned NOT NULL,
  `filename` varchar(200) NOT NULL,
  `from_id` bigint(20) NOT NULL,
@@ -49,13 +52,13 @@ CREATE TABLE IF NOT EXISTS `%s_messages_attachements` (
  KEY `to_id` (`to_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 -----------
-CREATE TABLE IF NOT EXISTS `%s_staff` (
+CREATE TABLE IF NOT EXISTS `%prefix%staff` (
  `user_id` bigint(20) unsigned NOT NULL,
  `role` varchar(32) NOT NULL,
  PRIMARY KEY (`user_id`,`role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 -----------
-CREATE TABLE IF NOT EXISTS `%s_users` (
+CREATE TABLE IF NOT EXISTS `%prefix%users` (
  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
  `user_password` char(32) NOT NULL,
  `avatar_url` varchar(1024) DEFAULT NULL,

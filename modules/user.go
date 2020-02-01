@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -24,6 +25,7 @@ type User struct {
 	LastServerRequest    int64
 	PayLoad              string
 	LastMessageID        string
+	LastSentMessageID    int64
 }
 
 type userStruct struct {
@@ -31,7 +33,7 @@ type userStruct struct {
 	Name          string         `db:"nickname"`
 	State         string         `db:"user_state"`
 	Lastlogin     int64          `db:"last_login"`
-	LastMessageID sql.NullString `db:"message_id"`
+	LastMessageID sql.NullString `db:"last_msg_read_id"`
 }
 
 func getMD5Hash(text string) string {
@@ -50,8 +52,10 @@ func (u *User) ChangeResource(res string) {
 	if !u.ReadyForInteractions {
 		u.FullAddr = res
 		tmp := strings.Split(res, "/")
-		u.Resource = tmp[1]
-		u.ReadyForInteractions = true
+		if len(tmp) > 1 {
+			u.Resource = tmp[1]
+			u.ReadyForInteractions = true
+		}
 	}
 }
 
@@ -67,6 +71,30 @@ func (u *User) GetUploadToken() string {
 	return m3 + "." + t
 }
 
+func (u *User) UpdateUserFromSessionTable() {
+
+	var user userStruct
+	err := DB.Get(&user, `select 
+		COALESCE(xmpp_sessions.last_msg_read_id, 0) as last_msg_read_id,
+		users.id, users.user_state, users.nickname, 
+		UNIX_TIMESTAMP(COALESCE(xmpp_sessions.last_login, xmpp_sessions.last_login, 0)) as last_login 
+		from users 
+		left join messages on messages.to_user=users.id
+		left join xmpp_sessions on xmpp_sessions.user_id=users.id
+		and xmpp_sessions.user_resource="`+u.Resource+`" 
+		where users.id="`+u.ID+`" `)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	if user.LastMessageID.Valid {
+		u.LastMessageID = user.LastMessageID.String
+	} else {
+		u.LastMessageID = "0"
+	}
+	log.Println("UPDATED USER", u)
+}
+
 func (u *User) TryToAuth(login, password string, resource string) (bool, string) {
 	passw := hashPassw(password)
 	t, err := strconv.ParseInt(login, 10, 32)
@@ -75,22 +103,22 @@ func (u *User) TryToAuth(login, password string, resource string) (bool, string)
 	}
 
 	var id = fmt.Sprintf("%v", t)
-	resource = strconv.Quote(strings.ToLower(resource))
+	//resource = strconv.Quote(strings.ToLower(resource))
 
 	var user userStruct
 	err = DB.Get(&user, `select 
-		(SELECT max(messages.id) FROM messages where messages.from_user=? or messages.to_user=?) as message_id,
+		COALESCE(xmpp_sessions.last_msg_read_id, 0) as last_msg_read_id,
 		users.id, users.user_state, users.nickname, 
 		UNIX_TIMESTAMP(COALESCE(xmpp_sessions.last_login, xmpp_sessions.last_login, 0)) as last_login 
 		from users 
 		left join messages on messages.to_user=users.id
-		left join xmpp_sessions on xmpp_sessions.user_id=users.id and 
-		xmpp_sessions.user_resource=? 
-		where users.id=? and user_password=?`,
-		id, id,
-		resource, id, passw)
+		left join xmpp_sessions on xmpp_sessions.user_id=users.id
+		and xmpp_sessions.user_resource="`+resource+`" 
+		where users.id="`+id+`" and user_password="`+passw+`"`)
+
 	if err != nil {
 		log.Println(err)
+		//os.Exit(1)
 		return false, "Unknown user"
 	}
 
@@ -115,8 +143,8 @@ func (u *User) DoRespond(conn *tls.Conn, msg string, id string) error {
 
 	if u.PayLoad != "" {
 		msg = msg + u.PayLoad
-		log.Println("\n\n\n[PAYLOAD]\n")
-		log.Println(u.PayLoad)
+		//log.Println("\n\n\n[PAYLOAD]\n")
+		//log.Println(u.PayLoad)
 
 		u.PayLoad = ""
 	}

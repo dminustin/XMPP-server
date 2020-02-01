@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/xml"
-	"fmt"
+	"log"
 	"strings"
 	//"log"
 )
@@ -27,7 +27,7 @@ func ActionAuth(s string, conn *tls.Conn, user *modules.User) bool {
 	data := &dataFormat_Auth{}
 	err := xml.Unmarshal(inData, data)
 	if nil != err {
-		fmt.Println("Error unmarshalling from XML", err)
+		log.Println("Error unmarshalling from XML", err)
 	}
 
 	t, err := base64.StdEncoding.DecodeString(data.Password)

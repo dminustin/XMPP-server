@@ -4,37 +4,64 @@ import (
 	"amfxmpp/config"
 	"amfxmpp/modules"
 	"amfxmpp/structs"
+	"log"
+	"strconv"
+	"strings"
 
 	"fmt"
 	"os"
 )
 
+func (a *ActionTemplate) ActionRosterSet() bool {
+
+	if !a.data.Query.Item.IsEmpty() {
+		tmp := strings.Split(a.data.Query.Item.Jid, "@")
+		id, err := strconv.ParseInt(tmp[0], 10, 64)
+		if err != nil {
+			return false
+		}
+
+		modules.DB.Exec(`INSERT IGNORE INTO friendship 
+		set
+		user_id=?,
+		friend_id=?,
+		state="memory",
+		contact_state="away",
+		contact_state_date="1970-01-01 00:00:00"
+		`, a.user.ID, id,
+		)
+
+	}
+	a.data.Id = a.data.Id + "-2"
+	return a.ActionRosterGetList()
+
+}
+
 func (a *ActionTemplate) ActionRosterGetList() bool {
 
 	var sel []structs.DBRosterStruct
-	err := modules.DB.Select(&sel, "select xmpp_roster.owner_id,"+
-		"xmpp_roster.user_id , "+
-		"xmpp_roster.relation , "+
-		"xmpp_roster.contact_state , "+
-		"xmpp_roster.contact_state_date , "+
-		"xmpp_roster.contact_state_date , "+
-		"xmpp_roster.contact_status_message , "+
-		" users.nickname from xmpp_roster "+
-		"join users on users.id=xmpp_roster.user_id "+
-		"where xmpp_roster.owner_id=? and xmpp_roster.relation='friend'", a.user.ID)
+	err := modules.DB.Select(&sel, `select 
+		`+config.Config.Tables.TableFriendship+`.user_id,
+		`+config.Config.Tables.TableFriendship+`.friend_id , 
+		`+config.Config.Tables.TableFriendship+`.state , 
+		`+config.Config.Tables.TableFriendship+`.contact_state , 
+		`+config.Config.Tables.TableFriendship+`.contact_state_date , 
+		`+config.Config.Tables.TableFriendship+`.contact_status_message , 
+		 `+config.Config.Tables.TableUsers+`.nickname from `+config.Config.Tables.TableFriendship+` 
+		join `+config.Config.Tables.TableUsers+` on `+config.Config.Tables.TableUsers+`.id=`+config.Config.Tables.TableFriendship+`.friend_id 
+		where `+config.Config.Tables.TableFriendship+`.user_id=? 
+		and `+config.Config.Tables.TableFriendship+`.state IN ('friend', 'memory')`, a.user.ID)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 
 	result := a.GetResultHeader() +
-		"<query xmlns=\"jabber:iq:roster\" ver=\"" + a.GetDateVersion() + "\">"
+		`<query xmlns="jabber:iq:roster" ver="` + a.GetDateVersion() + `">`
 
-	fmt.Println(sel)
+	for _, r := range sel {
 
-	for t, r := range sel {
-		fmt.Println(t, r)
 		result = result + fmt.Sprintf(`<item jid="%s@%s" subscription="both" name="%s" />`,
 			r.UserID,
 			config.Config.Server.Domain,

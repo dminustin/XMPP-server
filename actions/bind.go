@@ -1,16 +1,28 @@
 package actions
 
 import (
+	"amfxmpp/utils"
 	"fmt"
+	"log"
 )
 
 func (a *ActionTemplate) ActionBind() bool {
-	a.user.Resource = a.data.Bind.Payload.Content
-	if a.user.Resource != "" {
+	isUpdatedRes := false
+	if a.data.Bind.Payload.Content != a.user.Resource && a.data.Bind.Payload.Content != "" {
+		a.data.Bind.Payload.Content = utils.QuoteText(a.data.Bind.Payload.Content)
+		isUpdatedRes = true
+		a.user.Resource = a.data.Bind.Payload.Content
 		a.user.FullAddr = a.user.UID + "/" + a.user.Resource
 	} else {
 		a.user.FullAddr = a.user.UID
 	}
+
+	if isUpdatedRes {
+		a.user.UpdateUserFromSessionTable()
+	}
+
+	log.Println("start bind", a.user.FullAddr, a.data.Bind.Payload.Content)
+
 	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq id='%s' type='result'>"+
 			"<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>"+

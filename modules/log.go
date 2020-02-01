@@ -13,6 +13,10 @@ type AppLogStruct struct {
 }
 
 func WriteQueChan(id string, data string) {
+	//Do nothing
+	if true {
+		return
+	}
 	filename := "./tmp/" + id + ".txt"
 
 	_, err := os.Stat(filename)

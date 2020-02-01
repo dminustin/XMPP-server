@@ -26,7 +26,7 @@ type MyStruct struct {
 }
 
 func Init() {
-	var cert, _ = tls.LoadX509KeyPair("./.keys/fullchain3.pem", "./.keys/privkey3.pem")
+	var cert, _ = tls.LoadX509KeyPair(appconfig.Config.Server.Public_key, appconfig.Config.Server.Private_key)
 	config = tls.Config{
 		MinVersion:   tls.VersionTLS10,
 		Certificates: []tls.Certificate{cert},
@@ -39,28 +39,6 @@ func Init() {
 		ServerName: appconfig.Config.Server.Domain,
 	}
 
-	//Listen for uploading
-	go func() {
-		if true {
-			return
-		}
-		log.Println("Start fileserver")
-		listener, err := net.Listen("tcp", ":5224")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		for {
-			conn, err := listener.Accept()
-
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-
-			go UploadServer(conn)
-		}
-	}()
 	// Listen for incoming connections.
 
 	listener, err := net.Listen("tcp", ":"+fmt.Sprintf("%v", appconfig.Config.Server.Port))
@@ -87,7 +65,7 @@ func TCPAnswer(conn net.Conn) {
 	defer conn.Close()
 	buf := make([]byte, 512)
 	for {
-		log.Print("server: conn: waiting")
+		//log.Print("server: conn: waiting")
 		n, err := conn.Read(buf)
 		if err != nil {
 			if err != nil {
@@ -96,20 +74,20 @@ func TCPAnswer(conn net.Conn) {
 			break
 		}
 		var s = string(buf[:n])
-		log.Printf("server: conn: echo %q\n", s)
+		//log.Printf("server: conn: echo %q\n", s)
 
 		mtype := ParseMSGType(s)
-		log.Printf("XCommand [%s]", mtype)
+		//log.Printf("Command [%s]", mtype)
 		switch mtype {
 		case "stream":
 			{
-				log.Println("Starting stream")
+				//		log.Println("Starting stream")
 				WriteMessage(actions.MessageHelloReply(), conn)
 				break
 			}
 		case "starttls":
 			{
-				log.Printf("Starting TLS")
+				//		log.Printf("Starting TLS")
 				handleTLSConnection(conn)
 				break
 			}
@@ -130,11 +108,11 @@ func TCPAnswer(conn net.Conn) {
 }
 
 func WriteMessage(msg []byte, conn net.Conn) {
-	n, err := conn.Write(msg)
+	_, err := conn.Write(msg)
 	if err != nil {
 		log.Println("[ERROR] " + fmt.Sprintf("%s", err))
 	}
-	log.Printf("server: conn: wrote %d bytes", n)
+	//log.Printf("server: conn: wrote %d bytes", n)
 
 }
 
@@ -143,7 +121,7 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 	case "auth":
 		{
 			res := actions.ActionAuth(s, conn, user)
-			log.Printf("[%s]: %s", msgType, res)
+			//log.Printf("[%s]: %s", msgType, res)
 			return res, !res
 			break
 		}
@@ -158,7 +136,7 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 	case "iq":
 		{
 			if user.Authorized {
-				log.Printf("Starting IQ")
+				//log.Printf("Starting IQ")
 				actions.ActionIQ(s, conn, user)
 
 			}
@@ -167,7 +145,7 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 	case "presence":
 		{
 			if user.Authorized {
-				log.Printf("Starting Presence")
+				//log.Printf("Starting Presence")
 				actions.ActionPresence(s, conn, user)
 
 			}
@@ -175,7 +153,7 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 		}
 	case "message":
 		{
-			log.Printf("Starting Messaging")
+			//log.Printf("Starting Messaging")
 			if user.Authorized {
 				actions.ActionMessage(s, conn, user)
 
@@ -184,8 +162,10 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 		}
 	default:
 		{
-			log.Printf("[%s] unknown cmd %s", msgType, s)
-			user.DoRespond(conn, "", "")
+			if s != "" {
+				log.Printf("[%s] unknown cmd %s", msgType, s)
+				//user.DoRespond(conn, "", "")
+			}
 		}
 	}
 	return true, false
@@ -200,18 +180,19 @@ func handleTLSConnection(unenc_conn net.Conn) {
 		FullAddr:             "",
 		ReadyForInteractions: false,
 		LastMessageID:        "0",
+		LastSentMessageID:    0,
 	}
 	WriteMessage(actions.MessageProceedTLS(), unenc_conn)
 
-	log.Printf("%s", "Start server")
+	//log.Printf("%s", "Start server")
 	conn := tls.Server(unenc_conn, &config)
-	log.Printf("%s", "Start handshake")
+	//log.Printf("%s", "Start handshake")
 
-	err := conn.Handshake()
-	fmt.Println(err)
-	log.Printf("%s", "End handshake")
-	n, _ := conn.Write(actions.MessageHelloReply())
-	log.Printf("server: conn: wrote %d bytes", n)
+	_ = conn.Handshake()
+	//fmt.Println(err)
+	//log.Printf("%s", "End handshake")
+	_, _ = conn.Write(actions.MessageHelloReply())
+	//log.Printf("server: conn: wrote %d bytes", n)
 	var buffer = make([]byte, 16384)
 
 	connEstablished := false
@@ -223,7 +204,7 @@ func handleTLSConnection(unenc_conn net.Conn) {
 			return
 		}
 		var in_string = string(buffer[:bytesRead])
-		log.Printf("server: conn: echo %q\n", in_string)
+		//log.Printf("server: conn: echo %q\n", in_string)
 
 		tags := []string{
 			"message",
@@ -239,7 +220,7 @@ func handleTLSConnection(unenc_conn net.Conn) {
 			for _, s := range results {
 				parsed = true
 				mtype := ParseMSGType(s)
-				log.Printf("Command [%s]", mtype)
+				//log.Printf("Command [%s]", mtype)
 				doAction(mtype, s, conn, user)
 			}
 		}
@@ -251,12 +232,12 @@ func handleTLSConnection(unenc_conn net.Conn) {
 		//log.Println("AUTH:", user.Authorized, "READY:", user.ReadyForInteractions, user)
 		if (user.Authorized) && (user.ReadyForInteractions) {
 			if !connEstablished {
-				log.Println("Start Interactions routine")
+				//log.Println("Start Interactions routine")
 				connEstablished = true
 				go modules.DoServerInteractions(user, conn)
 			}
 
-			PrintMemUsage()
+			//PrintMemUsage()
 
 		}
 	}
