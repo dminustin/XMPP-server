@@ -32,7 +32,7 @@ type userStruct struct {
 	ID            int            `db:"id"`
 	Name          string         `db:"nickname"`
 	State         string         `db:"user_state"`
-	Lastlogin     int64          `db:"last_login"`
+	Lastlogin     string          `db:"last_login"`
 	LastMessageID sql.NullString `db:"last_msg_read_id"`
 }
 

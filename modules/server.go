@@ -227,7 +227,8 @@ func ActionPullMessage(message *MessageStruct, conn *tls.Conn, user *User) error
 		message.Message,
 		msgID,
 	)
-
+//do nothing for a while
+canCarbon = false;
 	if isCarbon && canCarbon {
 
 		m = `<message xmlns='jabber:client' 
