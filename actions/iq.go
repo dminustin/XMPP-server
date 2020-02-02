@@ -85,7 +85,7 @@ func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
 	modules.WriteQueChan(data.Id, s)
 
 	cmd := ""
-
+	log.Println(s)
 	//todo clear this dirty code!
 	if !data.Bind.Payload.IsEmpty() {
 		cmd = "bind"

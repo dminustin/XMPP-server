@@ -24,7 +24,7 @@ type MessageStruct struct {
 func (u *User) GetFriendsUpdates() []structs.DBRosterStruct {
 	s := `SELECT 
 ` + config.Config.Tables.TableFriendship + `.*,
-users.nickname
+users.nickname, users.avatar_id
 FROM ` + config.Config.Tables.TableFriendship + `
 JOIN users ON users.id = ` + config.Config.Tables.TableFriendship + `.friend_id
 AND ` + config.Config.Tables.TableFriendship + `.state in ("friend", "memory")
@@ -157,10 +157,27 @@ func ActionPullFriendUpdate(message *structs.DBRosterStruct, conn *tls.Conn, use
 	}
 
 	photo := ``
-	if user.UserData.AvatarHash != `` {
+	if message.AvatarID.Valid {
 		photo = `<x xmlns="vcard-temp:x:update">
-		<photo>` + user.UserData.AvatarHash + `</photo>
+		<photo>` + message.AvatarID.String + `</photo>
 		</x>`
+
+		//todo change this to AvatarHash
+		msg := `
+<message to='` + user.FullAddr + `' from='` + message.UserID + "@" + config.Config.Server.Domain + `'>
+<event xmlns='http://jabber.org/protocol/pubsub#event'>
+    <items node='urn:xmpp:avatar:metadata'>
+      <item id='ava-msg-` + message.AvatarID.String + `'>
+        <metadata xmlns='urn:xmpp:avatar:metadata'>
+          <info id='` + message.AvatarID.String + `' type='image/jpeg'/>
+        </metadata>
+      </item>
+    </items>
+  </event>
+</message>
+`
+
+		_, _ = conn.Write([]byte(msg))
 
 	}
 
