@@ -68,7 +68,7 @@ func (u *User) GetNewMessages() []MessageStruct {
 		 
 		 where
 		messages.id>%s and
-		(messages.to_user=%s or messages.from_user=%s)
+		(messages.to_user=%s /* or messages.from_user=%s */)
 		order by messages.id asc
 		`,
 		u.LastMessageID,
