@@ -1,12 +1,14 @@
 package actions
 
 import (
-	"amfxmpp/modules"
 	"crypto/tls"
 	"encoding/xml"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
+
+	"amfxmpp/modules"
 )
 
 type IQ struct {
@@ -25,6 +27,7 @@ type IQ struct {
 	Pubsub    NestedStruct `xml:"pubsub,omitempty"`
 	Ping      NestedStruct `xml:"ping,omitempty"`
 	Message   NestedStruct `xml:"message,omitempty"`
+	VCard     NestedStruct `xml:"vCard,omitempty"`
 }
 
 type NestedStruct struct {
@@ -83,6 +86,7 @@ func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
 
 	cmd := ""
 
+	//todo clear this dirty code!
 	if !data.Bind.Payload.IsEmpty() {
 		cmd = "bind"
 	} else if !data.Enable.IsEmpty() {
@@ -91,6 +95,15 @@ func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
 		cmd = "blocklist"
 	} else if !data.Pubsub.IsEmpty() {
 		cmd = "pubsub"
+	} else if !data.VCard.IsEmpty() {
+		if data.Type == "set" {
+			cmd = "vcard.set"
+		} else if data.Type == "get" {
+			cmd = "vcard.get"
+		} else {
+			//wtf
+			log.Println("Unknown request", s)
+		}
 	} else if !data.Ping.IsEmpty() {
 		cmd = "ping"
 	} else if !data.Query.Roster.IsEmpty() {
@@ -134,6 +147,16 @@ func ActionIQ(s string, conn *tls.Conn, user *modules.User) bool {
 	case "ping":
 		{
 			return oActionTemplate.ActionPong()
+			break
+		}
+	case "vcard.set":
+		{
+			return oActionTemplate.ActionVCardSet()
+			break
+		}
+	case "vcard.get":
+		{
+			return oActionTemplate.ActionVCardGet()
 			break
 		}
 	case "pubsub":

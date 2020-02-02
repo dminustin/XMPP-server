@@ -1,9 +1,10 @@
 package actions
 
 import (
-	"amfxmpp/utils"
 	"fmt"
 	"log"
+
+	"amfxmpp/utils"
 )
 
 func (a *ActionTemplate) ActionBind() bool {

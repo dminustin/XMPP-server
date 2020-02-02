@@ -1,11 +1,12 @@
 package actions
 
 import (
-	"amfxmpp/config"
-	"amfxmpp/modules"
 	"fmt"
 	"log"
 	"os"
+
+	"amfxmpp/config"
+	"amfxmpp/modules"
 )
 
 func (a *ActionTemplate) FileUpload_DoDisco() bool {

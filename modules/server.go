@@ -1,14 +1,15 @@
 package modules
 
 import (
-	"amfxmpp/config"
-	"amfxmpp/structs"
 	"crypto/tls"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"amfxmpp/config"
+	"amfxmpp/structs"
 )
 
 type MessageStruct struct {
@@ -121,14 +122,14 @@ func DoServerInteractions(u *User, conn *tls.Conn) {
 
 		u.LastServerRequest = time.Now().Unix()
 		DB.Exec(`insert into xmpp_sessions 
-			set last_login=NOW(), user_id=?, user_resource=? , last_msg_read_id=?
+			set last_login=NOW(), user_id=?, user_resource=? , last_msg_read_id=(select max(id) from messages)
 			on duplicate key update 
 			last_login=NOW(),
 			last_msg_read_id=?
 			`,
 			//u.LastServerRequest,
 			u.ID,
-			u.Resource, u.LastMessageID, u.LastMessageID,
+			u.Resource, u.LastMessageID,
 			//u.LastServerRequest,
 		)
 		//log.Println(u.FullAddr, u.LastMessageID)
@@ -227,8 +228,8 @@ func ActionPullMessage(message *MessageStruct, conn *tls.Conn, user *User) error
 		message.Message,
 		msgID,
 	)
-//do nothing for a while
-canCarbon = false;
+	//do nothing for a while
+	canCarbon = false
 	if isCarbon && canCarbon {
 
 		m = `<message xmlns='jabber:client' 

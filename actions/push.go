@@ -1,8 +1,9 @@
 package actions
 
 import (
-	"amfxmpp/config"
 	"fmt"
+
+	"amfxmpp/config"
 )
 
 func (a *ActionTemplate) Push_DoDisco() bool {
