@@ -68,11 +68,16 @@ func (u *User) GetNewMessages() []MessageStruct {
 		 
 		 
 		 where
-		messages.id>%s and
+        (
+		(`+u.LastMessageID+`>0 and messages.id>`+u.LastMessageID+`)
+        or 
+        (messages.date_create>NOW())
+        )
+        
+        and
 		(messages.to_user=%s /* or messages.from_user=%s */)
 		order by messages.id asc
 		`,
-		u.LastMessageID,
 		u.ID,
 		u.ID,
 	)
@@ -101,7 +106,7 @@ func (u *User) GetNewMessages() []MessageStruct {
 
 func DoServerInteractions(u *User, conn *tls.Conn) {
 	for {
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 30)
 
 		messages := u.GetNewMessages()
 		for _, msg := range messages {
