@@ -31,6 +31,7 @@ type User struct {
 
 type UserData struct {
 	AvatarPath  string //path to avatar image
+	AvatarHash  string
 	Nickname    string
 	BirthDate   string //birth date
 	PersonalURL string
@@ -76,15 +77,8 @@ func GetUserByID(id string) (UserData, error) {
 	}
 
 	if user.AvatarID.Valid {
-		if true {
-			key := utils.GetMD5Hash(user.AvatarID.String + `.` + id)
-			dir := string(key)[0:2]
-			dir = config.Config.FileServer.AvatarsPath + dir + "/"
-			filename := key + ".jpg"
-			res.Photo.Type = "image/jpeg"
-			log.Println(dir + filename)
-			res.Photo.BinVal = utils.Base64ReadFile(dir + filename)
-		}
+		res.Photo.Type = "image/jpeg"
+		res.Photo.BinVal = getUserAvatar(user.AvatarID.String, id)
 	}
 
 	res.Nickname = user.Name
@@ -93,6 +87,14 @@ func GetUserByID(id string) (UserData, error) {
 	res.AboutMe = user.AboutMe.String
 
 	return res, nil
+}
+
+func getUserAvatar(avatarID, userID string) string {
+	key := utils.GetMD5Hash(avatarID + `.` + userID)
+	dir := string(key)[0:2]
+	dir = config.Config.FileServer.AvatarsPath + dir + "/"
+	filename := key + ".jpg"
+	return utils.Base64ReadFile(dir + filename)
 }
 
 func hashPassw(passw string) string {
@@ -145,7 +147,7 @@ func (u *User) UpdateUserFromSessionTable() {
 	} else {
 		u.LastMessageID = "0"
 	}
-	log.Println("UPDATED USER", u)
+	//log.Println("UPDATED USER", u)
 }
 
 func (u *User) TryToAuth(login, password string, resource string) (bool, string) {
@@ -161,7 +163,7 @@ func (u *User) TryToAuth(login, password string, resource string) (bool, string)
 	var user userStruct
 	err = DB.Get(&user, `select 
 		COALESCE(xmpp_sessions.last_msg_read_id, 0) as last_msg_read_id,
-		users.id, users.user_state, users.nickname, 
+		users.id, users.user_state, users.nickname, users.avatar_id,
 		UNIX_TIMESTAMP(COALESCE(xmpp_sessions.last_login, xmpp_sessions.last_login, 0)) as last_login 
 		from users 
 		left join messages on messages.to_user=users.id
@@ -173,6 +175,13 @@ func (u *User) TryToAuth(login, password string, resource string) (bool, string)
 		log.Println(err)
 		//os.Exit(1)
 		return false, "Unknown user"
+	}
+
+	if user.AvatarID.Valid {
+		u.UserData.AvatarHash = utils.Base64ToSha1(getUserAvatar(user.AvatarID.String, fmt.Sprintf("%v", user.ID)))
+		//log.Println(u.UserData.AvatarHash)
+	} else {
+		u.UserData.AvatarHash = ``
 	}
 
 	if user.State != "active" {
