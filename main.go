@@ -1,11 +1,12 @@
 package main
 
 import (
+	"log"
+	"time"
+
 	app "amfxmpp/application"
 	"amfxmpp/config"
 	"amfxmpp/modules"
-	"log"
-	"time"
 )
 
 func main() {

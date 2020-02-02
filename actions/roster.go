@@ -1,15 +1,15 @@
 package actions
 
 import (
-	"amfxmpp/config"
-	"amfxmpp/modules"
-	"amfxmpp/structs"
+	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
-	"fmt"
-	"os"
+	"amfxmpp/config"
+	"amfxmpp/modules"
+	"amfxmpp/structs"
 )
 
 func (a *ActionTemplate) ActionRosterSet() bool {

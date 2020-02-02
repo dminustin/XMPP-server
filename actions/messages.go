@@ -1,15 +1,16 @@
 package actions
 
 import (
-	"amfxmpp/config"
-	"amfxmpp/modules"
-	"amfxmpp/utils"
 	"crypto/tls"
 	"encoding/xml"
 	"fmt"
 	"log"
 	"os"
 	"strings"
+
+	"amfxmpp/config"
+	"amfxmpp/modules"
+	"amfxmpp/utils"
 )
 
 type Message struct {

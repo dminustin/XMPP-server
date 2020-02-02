@@ -2,17 +2,17 @@ package application
 
 import (
 	"crypto/tls"
+	"fmt"
+	"log"
+	"net"
+	"os"
 	"regexp"
+	"runtime"
 
 	//"encoding/xml"
 	"amfxmpp/actions"
 	appconfig "amfxmpp/config"
 	"amfxmpp/modules"
-	"fmt"
-	"log"
-	"net"
-	"os"
-	"runtime"
 )
 
 var (

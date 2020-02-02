@@ -1,14 +1,16 @@
 package actions
 
 import (
-	"amfxmpp/config"
 	"crypto/tls"
 	"encoding/xml"
 	"log"
 	"os"
+
+	"amfxmpp/config"
+
 	//"os"
+	"amfxmpp/modules"
 )
-import "amfxmpp/modules"
 
 type XMLPresence struct {
 	XMLName  xml.Name `xml:"presence"`

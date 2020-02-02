@@ -6,21 +6,19 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	//"encoding/pem"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
-
 	//"fmt"
 	"strings"
-
-	//"encoding/pem"
-	"io/ioutil"
 
 	conf "amfxmpp/config"
 	//"crypto/tls"
 	"amfxmpp/modules"
-	"log"
-	"net/http"
 )
 
 type dbUploads struct {

@@ -1,13 +1,14 @@
 package actions
 
 import (
-	appconfig "amfxmpp/config"
-	"amfxmpp/modules"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/xml"
 	"log"
 	"strings"
+
+	appconfig "amfxmpp/config"
+	"amfxmpp/modules"
 	//"log"
 )
 

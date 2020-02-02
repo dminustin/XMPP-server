@@ -2,11 +2,11 @@ package modules
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"log"
-	"os"
 )
 
 var DB *sqlx.DB

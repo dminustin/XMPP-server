@@ -1,11 +1,12 @@
 package actions
 
 import (
-	"amfxmpp/config"
-	"amfxmpp/modules"
 	"crypto/tls"
 	"fmt"
 	"time"
+
+	"amfxmpp/config"
+	"amfxmpp/modules"
 )
 
 type ActionTemplate struct {

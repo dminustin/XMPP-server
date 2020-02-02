@@ -1,11 +1,8 @@
 package modules
 
 import (
-	"amfxmpp/config"
-	"crypto/md5"
 	"crypto/tls"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"math/rand"
@@ -13,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"amfxmpp/config"
+	"amfxmpp/utils"
 )
 
 type User struct {
@@ -26,25 +26,78 @@ type User struct {
 	PayLoad              string
 	LastMessageID        string
 	LastSentMessageID    int64
+	UserData             UserData
+}
+
+type UserData struct {
+	AvatarPath  string //path to avatar image
+	Nickname    string
+	BirthDate   string //birth date
+	PersonalURL string
+	Phones      struct {
+		Home string
+		Work string
+	}
+	AboutMe string
+	Photo   struct {
+		BinVal string
+		Type   string
+	}
 }
 
 type userStruct struct {
 	ID            int            `db:"id"`
 	Name          string         `db:"nickname"`
 	State         string         `db:"user_state"`
-	Lastlogin     string          `db:"last_login"`
+	Lastlogin     string         `db:"last_login"`
 	LastMessageID sql.NullString `db:"last_msg_read_id"`
+	AvatarID      sql.NullString `db:"avatar_id"`
+	BirthDate     sql.NullString `db:"bdate"`
+	AboutMe       sql.NullString `db:"aboutme"`
 }
 
-func getMD5Hash(text string) string {
-	hasher := md5.New()
-	hasher.Write([]byte(text))
-	return hex.EncodeToString(hasher.Sum(nil))
+func GetUserByID(id string) (UserData, error) {
+	var res UserData
+
+	log.Println("Get info for", id)
+
+	var user userStruct
+	err := DB.Get(&user, `select 
+    users.id, 
+    users.nickname, 
+    users.avatar_id, 
+    users.bdate, 
+    users.aboutme 
+ 
+    from users where id=?`, id)
+	if err != nil {
+		log.Println(err)
+		return res, err
+	}
+
+	if user.AvatarID.Valid {
+		if true {
+			key := utils.GetMD5Hash(user.AvatarID.String + `.` + id)
+			dir := string(key)[0:2]
+			dir = config.Config.FileServer.AvatarsPath + dir + "/"
+			filename := key + ".jpg"
+			res.Photo.Type = "image/jpeg"
+			log.Println(dir + filename)
+			res.Photo.BinVal = utils.Base64ReadFile(dir + filename)
+		}
+	}
+
+	res.Nickname = user.Name
+
+	res.BirthDate = user.BirthDate.String
+	res.AboutMe = user.AboutMe.String
+
+	return res, nil
 }
 
 func hashPassw(passw string) string {
-	m1 := getMD5Hash(passw + config.Config.Password.Salt1)
-	m2 := getMD5Hash(m1 + config.Config.Password.Salt2)
+	m1 := utils.GetMD5Hash(passw + config.Config.Password.Salt1)
+	m2 := utils.GetMD5Hash(m1 + config.Config.Password.Salt2)
 	return m2
 }
 
@@ -61,13 +114,13 @@ func (u *User) ChangeResource(res string) {
 
 func (u *User) GetUploadToken() string {
 	/**
-	This token will correct next hour
+	  This token will correct next hour
 	*/
 	t := strconv.FormatInt(time.Now().Unix(), 10)
 
-	m1 := getMD5Hash("Upload" + t + u.ID + config.Config.Password.Salt1 + fmt.Sprintf("%i", rand.Int()))
-	m2 := getMD5Hash(m1 + config.Config.Password.Salt2 + fmt.Sprintf("%i", rand.Int()))
-	m3 := getMD5Hash(m2 + config.Config.Password.Salt1 + fmt.Sprintf("%i", rand.Int()))
+	m1 := utils.GetMD5Hash("Upload" + t + u.ID + config.Config.Password.Salt1 + fmt.Sprintf("%i", rand.Int()))
+	m2 := utils.GetMD5Hash(m1 + config.Config.Password.Salt2 + fmt.Sprintf("%i", rand.Int()))
+	m3 := utils.GetMD5Hash(m2 + config.Config.Password.Salt1 + fmt.Sprintf("%i", rand.Int()))
 	return m3 + "." + t
 }
 

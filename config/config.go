@@ -1,9 +1,10 @@
 package config
 
 import (
-	"gopkg.in/ini.v1"
 	"log"
 	"os"
+
+	"gopkg.in/ini.v1"
 )
 
 type ConfigStruct struct {
@@ -34,6 +35,7 @@ type ConfigStruct struct {
 		PutPath         string
 		DownloadPath    string
 		FileStoragePath string
+		AvatarsPath     string
 	}
 
 	Tables struct {
@@ -75,6 +77,7 @@ func Init() {
 	Config.FileServer.PutPath = cfg.Section("fileserver").Key("put_path").String()
 	Config.FileServer.DownloadPath = cfg.Section("fileserver").Key("download_path").String()
 	Config.FileServer.FileStoragePath = cfg.Section("fileserver").Key("filestorage_path").String()
+	Config.FileServer.AvatarsPath = cfg.Section("fileserver").Key("avatars_path").String()
 
 	Config.Tables.TableUsers = cfg.Section("tables").Key("table_users").String()
 	Config.Tables.TableMessages = cfg.Section("tables").Key("table_messages").String()
