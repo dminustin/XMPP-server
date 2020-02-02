@@ -151,11 +151,20 @@ func ActionPullFriendUpdate(message *structs.DBRosterStruct, conn *tls.Conn, use
 		status = "<status >" + message.ContactStatusMessage.String + "</status >"
 	}
 
+	photo := ``
+	if user.UserData.AvatarHash != `` {
+		photo = `<x xmlns="vcard-temp:x:update">
+		<photo>` + user.UserData.AvatarHash + `</photo>
+		</x>`
+
+	}
+
 	s := fmt.Sprintf(`<presence from="%s@%s" xmlns="jabber:client" id="%s" to="%s">
 <priority>50</priority>
 %s
 %s
 <c node="http://gajim.org" hash="sha-1" xmlns="http://jabber.org/protocol/caps" ver="0oVRDLJYyCnbS13aGaP3gSFUU/o=" />
+`+photo+`
 </presence>
 `,
 		message.UserID, config.Config.Server.Domain, msgID, user.FullAddr,
