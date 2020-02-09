@@ -38,6 +38,7 @@ func appendFile(filename string, s string) {
 }
 
 func (a *AppLogStruct) WriteAppLog() {
+	return
 	f, err := os.OpenFile("./text.log",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
