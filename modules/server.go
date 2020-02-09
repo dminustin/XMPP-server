@@ -82,7 +82,7 @@ func (u *User) GetNewMessages() []MessageStruct {
 		u.ID,
 		u.ID,
 	)
-	log.Println("Last ", u.LastMessageID)
+	//log.Println("Last ", u.LastMessageID)
 	err := DB.Select(&messages, sq)
 
 	if err != nil {
@@ -115,7 +115,7 @@ func DoServerInteractions(u *User, conn *tls.Conn) {
 		time.Sleep(time.Second * 5)
 
 		messages := u.GetNewMessages()
-		log.Println(len(messages), "for ", u.ID)
+		//log.Println(len(messages), "for ", u.ID)
 		for _, msg := range messages {
 			err := ActionPullMessage(&msg, conn, u)
 			if err != nil {
