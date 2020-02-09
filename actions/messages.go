@@ -80,6 +80,7 @@ func ActionMessage(s string, conn *tls.Conn, user *modules.User) bool {
 		if err == nil {
 			message_id = ins
 		} else {
+			log.Println(err)
 			return false
 		}
 	}

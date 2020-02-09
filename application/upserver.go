@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	//"fmt"
@@ -76,27 +77,43 @@ func InitUploadServer() {
 }
 
 func DownloadServerHandler(w http.ResponseWriter, req *http.Request) {
-	log.Println("RECV")
-
-	log.Println("HEADER", req.Header)
-
-	log.Println("METHOD", req.Method)
-
-	log.Println("METHOD", req.URL)
+	//log.Println("RECV")
+	//log.Println("HEADER", req.Header)
+	//log.Println("METHOD", req.Method)
+	//log.Println("METHOD", req.URL)
 
 	defer req.Body.Close()
 	_, _ = ioutil.ReadAll(req.Body)
 
 	spl := strings.Split(req.URL.Path, "/")
 	key := spl[len(spl)-1]
-	uid := spl[len(spl)-2]
+	uid := spl[len(spl)-1]
+	uid = uid[:2]
 	var re = regexp.MustCompile(`([^a-z0-9\\._])`)
 	key = re.ReplaceAllString(key, ``)
 	uid = re.ReplaceAllString(uid, ``)
 
-	dir := conf.Config.FileServer.FileStoragePath + uid + "/" + key
+	if (len(key) < 10) || (len(uid) < 1) {
+		http.Error(w, "File not found.", 404)
+		return
+	}
 
-	Openfile, err := os.Open(dir)
+	dir := conf.Config.FileServer.FileStoragePath + uid + "/" + key
+	fName := dir
+	e := filepath.Ext(dir)
+	log.Println(e, dir)
+	if len(e) != 4 {
+		matches, err := filepath.Glob(dir + ".*")
+		log.Println(dir + ".*")
+		if (err != nil) || (len(matches) < 1) {
+			http.Error(w, "File not found.", 404)
+			return
+		}
+
+		fName = matches[0]
+	}
+	log.Println(fName)
+	Openfile, err := os.Open(fName)
 	defer Openfile.Close() //Close after function return
 	if err != nil {
 		//File not found, send 404
@@ -133,14 +150,29 @@ func DownloadServerHandler(w http.ResponseWriter, req *http.Request) {
 
 func UploadServerHandler(w http.ResponseWriter, req *http.Request) {
 	log.Println("SENT")
-
 	log.Println("HEADER", req.Header)
-
-	log.Println("METHOD", req.Method)
-
-	log.Println("METHOD", req.URL)
+	//log.Println("METHOD", req.Method)
+	//log.Println("METHOD", req.URL)
 
 	defer req.Body.Close()
+
+	if req.ContentLength > 5*1024*1024 {
+		http.Error(w, `Payload Too Large`, 413)
+		return
+	}
+
+	contentType := req.Header.Get(`Content-Type`)
+	log.Println("Trying to upload", contentType)
+
+	fileExt := ``
+
+	val, ok := conf.Config.AllowedTypes[contentType]
+	if ok {
+		fileExt = `.` + val
+	} else {
+		http.Error(w, `Unsupported Media Type`, 415)
+		return
+	}
 
 	file, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -169,7 +201,7 @@ func UploadServerHandler(w http.ResponseWriter, req *http.Request) {
 
 	dir = conf.Config.FileServer.FileStoragePath + dir + "/"
 
-	filename := key + ".jpg"
+	filename := key + fileExt
 
 	err = ioutil.WriteFile(dir+filename, file, 0644)
 	if err != nil {

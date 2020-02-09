@@ -46,6 +46,8 @@ type ConfigStruct struct {
 		TableUploads              string
 		TableFriendship           string
 	}
+
+	AllowedTypes map[string]string
 }
 
 var Config ConfigStruct
@@ -56,6 +58,15 @@ func Init() {
 		log.Println(err)
 		os.Exit(1)
 	}
+
+	Config.AllowedTypes = map[string]string{
+		`image/jpeg`: `jpg`,
+		`image/png`:  `png`,
+		`image/gif`:  `gif`,
+		`image/jpg`:  `jpg`,
+		`audio/mpeg`: `mp3`,
+	}
+
 	Config.Server.Domain = cfg.Section("server").Key("domain").String()
 	Config.Server.Public_key = cfg.Section("server").Key("public_key").String()
 	Config.Server.Domain = cfg.Section("server").Key("domain").String()
