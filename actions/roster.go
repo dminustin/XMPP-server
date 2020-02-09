@@ -25,7 +25,7 @@ func (a *ActionTemplate) ActionRosterSet() bool {
 		set
 		user_id=?,
 		friend_id=?,
-		state="memory",
+		state="friend",
 		contact_state="away",
 		contact_state_date="1970-01-01 00:00:00"
 		`, a.user.ID, id,

@@ -22,20 +22,21 @@ type MessageStruct struct {
 }
 
 func (u *User) GetFriendsUpdates() []structs.DBRosterStruct {
+
 	s := `SELECT 
 ` + config.Config.Tables.TableFriendship + `.*,
+UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(users.last_online) as last_seen,
 users.nickname, users.avatar_id
 FROM ` + config.Config.Tables.TableFriendship + `
 JOIN users ON users.id = ` + config.Config.Tables.TableFriendship + `.friend_id
 AND ` + config.Config.Tables.TableFriendship + `.state in ("friend", "memory")
 JOIN xmpp_sessions
 ON xmpp_sessions.user_id=` + config.Config.Tables.TableFriendship + `.user_id
-AND xmpp_sessions.last_login<` + config.Config.Tables.TableFriendship + `.contact_state_date
+AND xmpp_sessions.last_login< DATE_ADD(` + config.Config.Tables.TableFriendship + `.contact_state_date, INTERVAL 10 MINUTE)
 /*AND xmpp_sessions.user_resource=?*/
 WHERE ` + config.Config.Tables.TableFriendship + `.user_id=?`
 	var statuses []structs.DBRosterStruct
 	err := DB.Select(&statuses, s, u.ID) //	u.Resource
-
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -105,8 +106,9 @@ func (u *User) GetNewMessages() []MessageStruct {
 }
 
 func DoServerInteractions(u *User, conn *tls.Conn) {
+	getFriendUpdates := 11
 	for {
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Second * 5)
 
 		messages := u.GetNewMessages()
 		for _, msg := range messages {
@@ -117,12 +119,18 @@ func DoServerInteractions(u *User, conn *tls.Conn) {
 
 		}
 
-		updates := u.GetFriendsUpdates()
-		for _, msg := range updates {
-			err := ActionPullFriendUpdate(&msg, conn, u)
-			if err != nil {
-				return
+		if getFriendUpdates > 10 {
+			getFriendUpdates = 0
+			updates := u.GetFriendsUpdates()
+			for _, msg := range updates {
+
+				err := ActionPullFriendUpdate(&msg, conn, u)
+				if err != nil {
+					return
+				}
 			}
+		} else {
+			getFriendUpdates = getFriendUpdates + 1
 		}
 
 		u.LastServerRequest = time.Now().Unix()
@@ -137,6 +145,7 @@ func DoServerInteractions(u *User, conn *tls.Conn) {
 			u.Resource, u.LastMessageID,
 			//u.LastServerRequest,
 		)
+		DB.Exec(`update users set last_online=NOW() where id='` + u.ID + `'`)
 		//log.Println(u.FullAddr, u.LastMessageID)
 	}
 }
@@ -144,11 +153,9 @@ func DoServerInteractions(u *User, conn *tls.Conn) {
 func ActionPullFriendUpdate(message *structs.DBRosterStruct, conn *tls.Conn, user *User) error {
 	msgID := "srvstatus-" + fmt.Sprintf("%v", time.Now().Unix()) + "-" + message.UserID
 
-	state := ""
-	if message.ContactState.String != "active" {
-		state = "<show>" + message.ContactState.String + "</show>"
-	} else {
-		message.ContactStatusMessage.String = ""
+	lastSeen := int64(99999)
+	if message.LastSeen.Valid {
+		lastSeen, _ = strconv.ParseInt(message.LastSeen.String, 10, 64)
 	}
 
 	status := ""
@@ -156,64 +163,52 @@ func ActionPullFriendUpdate(message *structs.DBRosterStruct, conn *tls.Conn, use
 		status = "<status >" + message.ContactStatusMessage.String + "</status >"
 	}
 
-	photo := ``
-	if message.AvatarID.Valid {
-		photo = `<x xmlns="vcard-temp:x:update">
-		<photo>` + message.AvatarID.String + `</photo>
-		</x>`
+	var presType = ``
 
-		//todo change this to AvatarHash
-		msg := `
-<message to='` + user.FullAddr + `' from='` + message.UserID + "@" + config.Config.Server.Domain + `'>
-<event xmlns='http://jabber.org/protocol/pubsub#event'>
-    <items node='urn:xmpp:avatar:metadata'>
-      <item id='ava-msg-` + message.AvatarID.String + `'>
-        <metadata xmlns='urn:xmpp:avatar:metadata'>
-          <info id='` + message.AvatarID.String + `' type='image/jpeg'/>
-        </metadata>
-      </item>
-    </items>
-  </event>
-</message>
-`
-
-		_, _ = conn.Write([]byte(msg))
-
+	if message.ContactState.String == `offline` {
+		message.ContactState.String = `unavailable`
 	}
 
-	s := fmt.Sprintf(`<presence from="%s@%s" xmlns="jabber:client" id="%s" to="%s">
-<priority>50</priority>
-%s
-%s
-<c node="http://gajim.org" hash="sha-1" xmlns="http://jabber.org/protocol/caps" ver="0oVRDLJYyCnbS13aGaP3gSFUU/o=" />
-`+photo+`
+	show := ``
+	if lastSeen < 120 {
+		if message.ContactState.String == "active" {
+			show = `<show>active</show>`
+			presType = ` type="active" `
+		} else {
+			show = `<show>` + message.ContactState.String + `</show>`
+			presType = ` type="` + message.ContactState.String + `" `
+		}
+
+	} else if lastSeen < 240 {
+		if message.ContactState.String == "active" {
+			show = `<show>away</show>`
+			presType = ` type="away" `
+		} else {
+			show = `<show>` + message.ContactState.String + `</show>`
+			presType = ` type="` + message.ContactState.String + `" `
+		}
+	} else {
+		show = `<show>offline</show>`
+		presType = ` type="unavailable" `
+	}
+
+	if lastSeen > 300 {
+		//log.Println(`lastseen > 300 ` + message.UserID)
+		return nil
+	}
+
+	ls := ""
+	if message.LastSeen.Valid {
+		ls = message.LastSeen.String
+	}
+	s := fmt.Sprintf(`<presence from="%s@%s" xmlns="jabber:client" id="%s" to="%s" `+presType+` >
+`+show+`
+`+status+`
+<query xmlns='jabber:iq:last' seconds='`+ls+`'/>
 </presence>
 `,
 		message.UserID, config.Config.Server.Domain, msgID, user.FullAddr,
-		state, status,
-		message.ContactStatusMessage.String,
 	)
-
-	s = s + `<message from="` + message.UserID + "@" + config.Config.Server.Domain + `" 
-	xmlns="jabber:client" id="a` + msgID + `" to="` + user.FullAddr + `">
-<event xmlns="http://jabber.org/protocol/pubsub#event">
-<items node="http://jabber.org/protocol/activity">
-<item id="current">
-<activity xmlns="http://jabber.org/protocol/activity" />
-</item>
-</items>
-</event>
-</message>
-<message from="` + message.UserID + "@" + config.Config.Server.Domain + `" 
-	xmlns="jabber:client" id="b` + msgID + `" to="` + user.FullAddr + `">
-<event xmlns="http://jabber.org/protocol/pubsub#event">
-<items node="http://jabber.org/protocol/mood">
-<item id="current">
-<mood xmlns="http://jabber.org/protocol/mood" />
-</item>
-</items>
-</event>
-</message>`
 
 	//user.PayLoad = user.PayLoad + "\r\n" + s
 	_, err := conn.Write([]byte(s))

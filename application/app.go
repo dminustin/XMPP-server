@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"time"
 
 	//"encoding/xml"
 	"amfxmpp/actions"
@@ -38,6 +39,11 @@ func Init() {
 			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA},
 		ServerName: appconfig.Config.Server.Domain,
 	}
+
+	go func() {
+		time.Sleep(time.Minute)
+		PrintMemUsage()
+	}()
 
 	// Listen for incoming connections.
 
@@ -127,7 +133,7 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 		}
 	case "stream":
 		{
-			log.Println(s)
+			//			log.Println(s)
 			if user.Authorized {
 				user.DoRespond(conn, actions.MessageAfterLogged(), "")
 			}
@@ -163,7 +169,7 @@ func doAction(msgType string, s string, conn *tls.Conn, user *modules.User) (res
 	default:
 		{
 			if s != "" {
-				log.Printf("[%s] unknown cmd %s", msgType, s)
+				//				log.Printf("[%s] unknown cmd %s", msgType, s)
 				//user.DoRespond(conn, "", "")
 			}
 		}
@@ -201,6 +207,13 @@ func handleTLSConnection(unenc_conn net.Conn) {
 		bytesRead, err := conn.Read(buffer)
 		if err != nil {
 			conn.Close()
+
+			//Save last status
+			if user.Authorized {
+				log.Println("Logoff " + user.ID)
+				modules.DB.Exec(`update friendship set contact_state='offline', contact_state_date=NOW() where friend_id=` + user.ID)
+			}
+
 			return
 		}
 		var in_string = string(buffer[:bytesRead])
@@ -237,8 +250,6 @@ func handleTLSConnection(unenc_conn net.Conn) {
 				go modules.DoServerInteractions(user, conn)
 			}
 
-			//PrintMemUsage()
-
 		}
 	}
 }
@@ -247,10 +258,10 @@ func PrintMemUsage() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-	fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
-	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
-	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
-	fmt.Printf("\tNumGC = %v\n", m.NumGC)
+	log.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+	log.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	log.Printf("\tSys = %v MiB", bToMb(m.Sys))
+	log.Printf("\tNumGC = %v\n", m.NumGC)
 }
 
 func bToMb(b uint64) uint64 {

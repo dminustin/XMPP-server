@@ -2,7 +2,6 @@ package actions
 
 import (
 	"fmt"
-	"log"
 
 	"amfxmpp/utils"
 )
@@ -22,7 +21,7 @@ func (a *ActionTemplate) ActionBind() bool {
 		a.user.UpdateUserFromSessionTable()
 	}
 
-	log.Println("start bind", a.user.FullAddr, a.data.Bind.Payload.Content)
+	//	log.Println("start bind", a.user.FullAddr, a.data.Bind.Payload.Content)
 
 	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq id='%s' type='result'>"+

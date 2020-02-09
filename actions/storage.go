@@ -24,7 +24,7 @@ func (a *ActionTemplate) ActionStorage() bool {
 
 func (a *ActionTemplate) ActionGetMetaContacts() bool {
 	//todo implement contactlist
-	log.Println("DO ContactList")
+	//	log.Println("DO ContactList")
 	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq type=\"result\" xmlns=\"jabber:client\" id=\"%s\" to=\"%s\">"+
 			"<query xmlns=\"jabber:iq:private\">"+
@@ -43,7 +43,7 @@ func (a *ActionTemplate) ActionGetMetaContacts() bool {
 }
 
 func (a *ActionTemplate) ActionGetRosterDelimiter() bool {
-	log.Println("DO Roster Delimiter")
+	//	log.Println("DO Roster Delimiter")
 	a.user.DoRespond(a.conn,
 		fmt.Sprintf("<iq type=\"result\" xmlns=\"jabber:client\" id=\"%s\" to=\"%s\">"+
 			"<query xmlns=\"jabber:iq:private\">"+

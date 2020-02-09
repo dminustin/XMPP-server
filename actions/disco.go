@@ -70,6 +70,7 @@ func (a *ActionTemplate) ActionDiscoInfo() bool {
 			"<feature var=\"http://jabber.org/protocol/pubsub#auto-create\" />"+
 			"<feature var=\"http://jabber.org/protocol/pubsub#auto-subscribe\" />"+
 			"<feature var=\"urn:xmpp:carbons:2\" />"+
+			"<feature var=\"urn:xmpp:carbons:1\" />"+
 			"<feature var=\"http://jabber.org/protocol/stats\" />"+
 			"<feature var=\"vcard-temp\" />"+
 			"<feature var=\"jabber:iq:auth\" />"+

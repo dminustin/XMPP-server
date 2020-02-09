@@ -12,4 +12,5 @@ type DBRosterStruct struct {
 	ContactStatusMessage sql.NullString `db:"contact_status_message"`
 	Regdate              sql.NullString `db:"regdate"`
 	AvatarID             sql.NullString `db:"avatar_id"`
+	LastSeen             sql.NullString `db:"last_seen"`
 }
